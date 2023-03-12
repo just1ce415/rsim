@@ -3,14 +3,17 @@ FPS = 60
 
 NONE = "None"
 
+# Types of weapons
 SWORD = "Sword"
 CLAYMORE = "Claymore"
 POLEARM = "Polearm"
 CATALYST = "Catalyst"
 BOW = "Bow"
 
+# Affliction
 LIYUE = "Liyue"
 
+# Elements/Auras
 ANEMO = "Anemo"
 HYDRO = "Hydro"
 ELECTRO = "Electro"
@@ -18,14 +21,19 @@ DENDRO = "Dendro"
 CRYO = "Cryo"
 PYRO = "Pyro"
 GEO = "Geo"
-PHYS = "Physycal"
+PHYS = "Physical"
+BURNING = "Burning"
+QUICKEN = "Quicken"
+FROZEN = "Frozen"
 
+# Attack types / DMG types
 NA = "Normal Attack"
 CA = "Charged Attack"
 PA = "Plunge Attack"
 SKILL = "Elemental Skill"
 BURST = "Elemental Burst"
 
+# Stats
 ATK = "Total ATK"
 HP = "Total HP"
 DEF = "Total DEF"
@@ -48,4 +56,15 @@ DENDRO_DMG = "Dendro DMG Bonus"
 CRYO_DMG = "Cryo DMG Bonus"
 PYRO_DMG = "Pyro DMG Bonus"
 GEO_DMG = "Geo DMG Bonus"
-PHYS_DMG = "Physycal DMG Bonus"
+PHYS_DMG = "Physical DMG Bonus"
+
+# Events
+REACTION = "Elemental reaction triggered"
+CHARACTER_ATTACKS = "Characters attacks an opponent"
+CHARACTER_HITS = "Character hits an opponent"
+HP_DECREASE = "Character's HP decreases"
+CHARACTER_HEALS = "Character1 heales other character2"
+SWAP = "Swap from character1 to character2"
+PICKED_PARTICLE = "Character picks particle"
+JUMP = "Character jumps"
+DASH = "Character dashes"

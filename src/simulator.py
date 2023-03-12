@@ -1,5 +1,5 @@
-from configs import BaseConfig
-from environment import Environment
+from src.configs.base_config import BaseConfig
+from src.environment import Environment
 
 class Simulator:
     def __init__(
@@ -9,10 +9,11 @@ class Simulator:
     ):
         self.config = config
         self.n_rotations = n_rotations
-        self.targets = n_targets
+        self.n_targets = n_targets
+        self.all_actions = config.rotation * n_rotations
         self.__test_env = Environment(
-        team=config.team, action_genrator=config.action_generator, 
-        n_rotations=n_rotations, n_targets=n_targets, enemy_res=enemy_res,
+        team=config.team, actions=self.all_actions, 
+        n_targets=n_targets, enemy_res=enemy_res,
         enemy_lvl=enemy_lvl
         )
         self.loggers = ""
@@ -22,13 +23,13 @@ class Simulator:
 
     def __simulate_test(self):
         self.__test_env.start(self.loggers, self.data)
-        self.config.set_artifacts_params(self.data["target_ers"], self.data["mv_params"])
+        self.config.set_artifact_params(self.data)
         self.config.initialize_artifacts()
 
     def __simulate(self):
         self.__env = Environment(
-        team=self.config.team, action_genrator=self.config.action_generator, 
-        n_rotations=self.n_rotations, n_targets=self.n_targets, enemy_res=self.__test_env.enemy.enemy_res,
+        team=self.config.team, actions=self.all_actions,
+        n_targets=self.n_targets, enemy_res=self.__test_env.enemy.enemy_res,
         enemy_lvl=self.__test_env.enemy.enemy_lvl
         )
         self.__env.start(self.loggers, self.data)

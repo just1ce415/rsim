@@ -11,6 +11,8 @@ class Character(Entity):
         self.affliction = NONE
         self.weapon_type = NONE
         self.elemental_type = NONE
+        self.stamina = 240
+        self._set_general_info()
 
         # Equipment info
         self.level = level
@@ -20,17 +22,11 @@ class Character(Entity):
         self.sands = None
         self.goblet = None
         self.circlet = None
+        self.set_bonus1 = None
+        self.set_bonus2 = None
+        self.set_bonus3 = None
         self.talent_lvls = talent_lvls
         self.constallation = constallation
-        self._activate_constallations()
-
-        # Skills general info
-        self.skill_cd = 0
-        # Tuple [chance to generate, respective amount]
-        self.particle_generation = [(1/3, 1), (2/3, 2)]
-        self.burst_cd = 0
-        self.energy = 0
-        self.burst_cost = 0
 
         # Stats
         self.base_hp = 0
@@ -44,6 +40,7 @@ class Character(Entity):
         self.def_percent = 0
         self.em = 0
         self.er = 1
+        self._activate_base_stats()
 
         self.swirl_reaction_bonus = 0
         self.bloom_reaction_bonus = 0
@@ -105,7 +102,22 @@ class Character(Entity):
         self.healing_bonus = 0
         self.healing_received = 0
 
+        # Skills general info
+        self.skill_cd = 0
+        # Tuple [chance to generate, respective amount]
+        self.particle_generation = [(1/3, 1), (2/3, 2)]
+        self.burst_cd = 0
+        self.energy = 0
+        self.burst_cost = 0
+        self._init_attacks()
+        self._init_elemental_skill()
+        self._init_elemental_burst()
+        self._init_aone()
+        self._init_afour()
+        self._activate_constallations()
+
         self.__arg_map = {
+            NONE: 0,
             ATK: self.total_atk(),
             HP: self.total_hp(),
             DEF: self.total_def(),
@@ -125,6 +137,30 @@ class Character(Entity):
         }
 
     def _activate_constallations(self):
+        pass
+
+    def _set_general_info(self):
+        pass
+
+    def _activate_base_stats(self):
+        """
+        Activate base stats and ascesntion stat
+        """
+        pass
+
+    def _init_attacks(self):
+        pass
+
+    def _init_elemental_skill(self):
+        pass
+
+    def _init_elemental_burst(self):
+        pass
+
+    def _init_aone(self):
+        pass
+
+    def _init_afour(self):
         pass
 
     def equip_weapon(self):
@@ -166,85 +202,101 @@ class Character(Entity):
     def total_def(self):
         return self.base_def * (1 + self.def_percent) + self.flat_def
 
-    def effective(self, stat=ATK, elemental_type=ANEMO, attack_type=NA):
+    def get_cm(self, cv, crit_ratio=1/2):
+        """
+        Artificial crit ratio
+        """
+        # if CRIT Rate is less than 1
+        if cv <= 1 + 1/crit_ratio:
+            return 1 + crit_ratio * pow(cv, 2) / (4 * pow(crit_ratio + 0.5, 2))
+        else:
+            return 1 + 1 * (cv - 2)
+
+    def effective(self, stat=NONE, base_flat_dmg=0, elemental_type=ANEMO, attack_type=NA, crit_ratio=1/2):
         """
         Effective DMG not accounting enemy stats and multiplicative reactions
+        Do NOT specify flat dmg buff and talent dmg simultaneously
         """
+        assert self.__arg_map[stat] == 0 or base_flat_dmg == 0
         elemental_type_dmg_bonus, elemental_type_cd, elemental_type_cr = self.__arg_map[elemental_type] 
         attack_type_dmg_bonus, attack_type_cd, attack_type_cr = self.__arg_map[attack_type]
         total_dmg_bonus = 1 + elemental_type_dmg_bonus + attack_type_dmg_bonus + self.all_dmg_bonus
         total_cd = elemental_type_cd + attack_type_cd + self.cd
         total_cr = elemental_type_cr + attack_type_cr + self.cr
         cv = total_cd + 2 * total_cr
-        # Artificial 1/2 ratio
-        if cv <= 4:
-            cm = 1 + pow(cv, 2) / 8
-        else:
-            cm = 1 + 1 * (cv - 2)
-        return self.__arg_map[stat] * total_dmg_bonus * cm
-
-    def effective_flat_buff(self, base_dmg=0, elemental_type=ANEMO, attack_type=NA):
-        """
-        Effective flat DMG obtained by buff (Shenhe, Cinnibar Spindle) not accounting
-        enemy stats and multiplicative reactions
-        """
-        elemental_type_dmg_bonus, elemental_type_cd, elemental_type_cr = self.__arg_map[elemental_type] 
-        attack_type_dmg_bonus, attack_type_cd, attack_type_cr = self.__arg_map[attack_type]
-        total_dmg_bonus = 1 + elemental_type_dmg_bonus + attack_type_dmg_bonus + self.all_dmg_bonus
-        total_cd = elemental_type_cd + attack_type_cd + self.cd
-        total_cr = elemental_type_cr + attack_type_cr + self.cr
-        cv = total_cd + 2 * total_cr
-        # Artificial 1/2 ratio
-        if cv <= 4:
-            cm = 1 + pow(cv, 2) / 8
-        else:
-            cm = 1 + 1 * (cv - 2)
-        return base_dmg * total_dmg_bonus * cm
+        cm = self.get_cm(cv, crit_ratio)
+        return (self.__arg_map[stat] + base_flat_dmg) * total_dmg_bonus * cm
 
     def swirl(self):
         """
         Transformative reaction DMG not accounting enemy resistance
         """
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 0.6 * self.level_multiplier() * (1 + emm + self.swirl_reaction_bonus)
 
     def bloom(self):
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 2 * self.level_multiplier() * (1 + emm + self.bloom_reaction_bonus)
 
     def burgeon(self):
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 3 * self.level_multiplier() * (1 + emm + self.burgeon_reaction_bonus)
 
     def hyperbloom(self):
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 3 * self.level_multiplier() * (1 + emm + self.hyperbloom_reaction_bonus)
 
-    def aggravate(self):
+    def aggravate(self, attack_type=NA):
         """
         Works the same way as `effective_flat_buff`
         """
-        pass
+        emm = 5 * self.em + (1200 + self.em)
+        base_dmg = 1.15 * self.level_multiplier() * (1 + emm + self.aggravate_reaction_bonus)
+        return self.effective_flat_buff(base_dmg=base_dmg, elemental_type=ELECTRO, attack_type=attack_type)
 
-    def spread(self):
-        pass
+    def spread(self, attack_type=NA):
+        emm = 5 * self.em + (1200 + self.em)
+        base_dmg = 1.25 * self.level_multiplier() * (1 + emm + self.spread_reaction_bonus)
+        return self.effective_flat_buff(base_dmg=base_dmg, elemental_type=DENDRO, attack_type=attack_type)
     
     def electro_charged(self):
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 1.2 * self.level_multiplier() * (1 + emm + self.electro_charged_reaction_bonus)
 
     def burning(self):
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 0.25 * self.level_multiplier() * (1 + emm + self.burning_reaction_bonus)
 
     def overload(self):
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 2 * self.level_multiplier() * (1 + emm + self.overload_reaction_bonus)
 
     def superconduct(self):
-        pass
+        emm = 16 * self.em + (2000 + self.em)
+        return 0.5 * self.level_multiplier() * (1 + emm + self.superconduct_reaction_bonus)
 
-    def vaporize(self):
+    def __forward_multiplicative(self, reaction_bonus):
         """
         Multiplicative reaction multiplier
         """
-        pass
+        emm = 2.78 * self.em + (1400 + self.em)
+        return 2 * (1 + emm + reaction_bonus)
 
-    def melt(self):
-        pass
+    def __reverse_multiplicative(self, reaction_bonus):
+        emm = 2.78 * self.em + (1400 + self.em)
+        return 1.5 * (1 + emm + reaction_bonus)
+
+    def forward_vape(self):
+        return self.__forward_multiplicative(self.vaporize_reaction_bonus)
+
+    def reverse_vape(self):
+        return self.__reverse_multiplicative(self.vaporize_reaction_bonus)
+
+    def forward_melt(self):
+        return self.__forward_multiplicative(self.melt_reaction_bonus)
+
+    def reverse_melt(self):
+        return self.__reverse_multiplicative(self.melt_reaction_bonus)
 
     def swap(self):
         pass

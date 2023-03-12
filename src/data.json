@@ -1,0 +1,58 @@
+{
+    "time": 0,
+    "dmg_info": {
+        "character1": {
+            "flat_hp": [],
+            "flat_atk": [],
+            "flat_def": [],
+            "hp_percent": [],
+            "atk_percent": [],
+            "def_percent": [],
+            "em": [],
+            "mv_atk": [],
+            "mv_hp": [],
+            "mv_def": [],
+            "mv_em": [],
+            "flat_dmg": [],
+            "dmg_bonus": [],
+            "cv": [],
+            "is_spread": [],
+            "is_aggravate": [],
+            "is_swirl": [],
+            "is_bloom": [],
+            "is_burgeon": [],
+            "is_hyperbloom": [],
+            "is_burning": [],
+            "is_electro_charged": [],
+            "is_overload": [],
+            "is_supercoduct": [],
+            "is_forward_multiplicative": [],
+            "is_reverse_multiplicative": [],
+            "dmg_type": [],
+            "outgoing_damage": []
+        },
+        "character2": {},
+        "character3": {},
+        "character4": {}
+    },
+    "er_info": {
+        "character1": {
+            "particle_energy_each_rotation": [],
+            "energy_each_rotation": [],
+            "cost_each_rotation": [],
+            "actual_er_each_rotation": [],
+            "recommended_er_each_rotation": []
+        },
+        "character2": {},
+        "character3": {},
+        "character4": {}
+    },
+    "healing_info": {
+        "character1": {
+            "healing_instances": []
+        },
+        "character2": {},
+        "character3": {},
+        "character4": {}
+    }
+}

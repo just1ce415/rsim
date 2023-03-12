@@ -1,1 +1,0 @@
-from src.entities.characters.character import Character
