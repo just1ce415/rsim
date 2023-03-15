@@ -1,7 +1,10 @@
 {
-    "time": 0,
+    "time_spent": 0,
     "dmg_info": {
         "character1": {
+            "base_hp": [],
+            "base_atk": [],
+            "base_def": [],
             "flat_hp": [],
             "flat_atk": [],
             "flat_def": [],
@@ -15,7 +18,9 @@
             "mv_em": [],
             "flat_dmg": [],
             "dmg_bonus": [],
-            "cv": [],
+            "crit_ratio": [],
+            "cd": [],
+            "cr": [],
             "is_spread": [],
             "is_aggravate": [],
             "is_swirl": [],
@@ -25,10 +30,13 @@
             "is_burning": [],
             "is_electro_charged": [],
             "is_overload": [],
-            "is_supercoduct": [],
+            "is_superconduct": [],
             "is_forward_multiplicative": [],
             "is_reverse_multiplicative": [],
+            "level": [],
+            "reaction_bonus": [],
             "dmg_type": [],
+            "hp_level": [],
             "outgoing_damage": []
         },
         "character2": {},

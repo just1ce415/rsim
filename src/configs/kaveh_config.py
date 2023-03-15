@@ -75,12 +75,13 @@ class KavehConfig(BaseConfig):
 
         # Artifacts
         stat_value = 70 # between 0 and 100
-        kaveh_flower, kaveh_feather, kaveh_sands, kaveh_goblet, kaveh_circlet = ArtifactGenerator().generate_substats_by_stat_value(
-            stat_value=stat_value, dmg_info=kaveh_dmg_info, er_info=kaveh_er_info,
+        kaveh_flower, kaveh_feather, kaveh_sands, kaveh_goblet, kaveh_circlet = ArtifactGenerator(
             flower=Flower(set_bonus=DeepwoodMemories), feather=Feather(set_bonus=DeepwoodMemories),
             sands=Sands(set_bonus=DeepwoodMemories, main_em=True),
             goblet=Goblet(set_bonus=DeepwoodMemories, main_dendro_dmg_bonus=True),
             circlet=Circlet(set_bonus=DeepwoodMemories, main_cr=True)
+        ).generate_substats_by_stat_value(
+            stat_value=stat_value, dmg_info=kaveh_dmg_info, er_info=kaveh_er_info
         )
         kaveh.equip_flower(kaveh_flower)
         kaveh.equip_feather(kaveh_feather)
@@ -88,12 +89,13 @@ class KavehConfig(BaseConfig):
         kaveh.equip_goblet(kaveh_goblet)
         kaveh.equip_circlet(kaveh_circlet)
         
-        fischl_flower, fischl_feather, fischl_sands, fischl_goblet, fischl_circlet = ArtifactGenerator().generate_substats_by_stat_value(
-            stat_value=stat_value, dmg_info=fischl_dmg_info, er_info=fischl_er_info,
+        fischl_flower, fischl_feather, fischl_sands, fischl_goblet, fischl_circlet = ArtifactGenerator(
             flower=Flower(set_bonus=ThunderingFury), feather=Feather(set_bonus=ThunderingFury),
             sands=Sands(set_bonus=ThunderingFury, main_em=True),
             goblet=Goblet(set_bonus=GladiatorFinale, main_electro_dmg_bonus=True),
             circlet=Circlet(set_bonus=GladiatorFinale, main_cr=True)
+        ).generate_substats_by_stat_value(
+            stat_value=stat_value, dmg_info=fischl_dmg_info, er_info=fischl_er_info
         )
         fischl.equip_flower(fischl_flower)
         fischl.equip_feather(fischl_feather)
@@ -101,12 +103,13 @@ class KavehConfig(BaseConfig):
         fischl.equip_goblet(fischl_goblet)
         fischl.equip_circlet(fischl_circlet)
 
-        xingqiu_flower, xingqiu_feather, xingqiu_sands, xingqiu_goblet, xingqiu_circlet = ArtifactGenerator().generate_substats_by_stat_value(
-            stat_value=stat_value, dmg_info=xingqiu_dmg_info, er_info=xingqiu_er_info,
+        xingqiu_flower, xingqiu_feather, xingqiu_sands, xingqiu_goblet, xingqiu_circlet = ArtifactGenerator(
             flower=Flower(set_bonus=Emblem), feather=Feather(set_bonus=Emblem),
             sands=Sands(set_bonus=Emblem, main_atk_percent=True),
             goblet=Goblet(set_bonus=Emblem, main_hydro_dmg_bonus=True),
             circlet=Circlet(set_bonus=Emblem, main_cr=True)
+        ).generate_substats_by_stat_value(
+            stat_value=stat_value, dmg_info=xingqiu_dmg_info, er_info=xingqiu_er_info
         )
         xingqiu.equip_flower(xingqiu_flower)
         xingqiu.equip_feather(xingqiu_feather)
@@ -114,12 +117,13 @@ class KavehConfig(BaseConfig):
         xingqiu.equip_goblet(xingqiu_goblet)
         xingqiu.equip_circlet(xingqiu_circlet)
 
-        yaemiko_flower, yaemiko_feather, yaemiko_sands, yaemiko_goblet, yaemiko_circlet = ArtifactGenerator().generate_substats_by_stat_value(
-            stat_value=stat_value, dmg_info=yaemiko_dmg_info, er_info=yaemiko_er_info,
+        yaemiko_flower, yaemiko_feather, yaemiko_sands, yaemiko_goblet, yaemiko_circlet = ArtifactGenerator(
             flower=Flower(set_bonus=GuildedDreams), feather=Feather(set_bonus=GuildedDreams),
             sands=Sands(set_bonus=GuildedDreams, main_em=True),
             goblet=Goblet(set_bonus=GuildedDreams, main_electro_dmg_bonus=True),
             circlet=Circlet(set_bonus=GuildedDreams, main_cr=True)
+        ).generate_substats_by_stat_value(
+            stat_value=stat_value, dmg_info=yaemiko_dmg_info, er_info=yaemiko_er_info
         )
         yaemiko.equip_flower(yaemiko_flower)
         yaemiko.equip_feather(yaemiko_feather)

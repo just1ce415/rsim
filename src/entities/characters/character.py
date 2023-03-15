@@ -1,5 +1,6 @@
 from src.entities.entity import Entity
 from src.constants import *
+from src.damage import get_cm
 
 class Character(Entity):
     def __init__(
@@ -116,6 +117,8 @@ class Character(Entity):
         self._init_afour()
         self._activate_constallations()
 
+        self.hp_level = 1
+
         self.__arg_map = {
             NONE: 0,
             ATK: self.total_atk(),
@@ -163,6 +166,14 @@ class Character(Entity):
     def _init_afour(self):
         pass
 
+    def inflict_dmg(self, dmg):
+        percent_decrease = dmg / self.total_hp
+        self.hp_level = self.hp_level - percent_decrease
+
+    def heal_hp(self, healing):
+        percent_increase = healing / self.total_hp
+        self.hp_level = self.hp_level + percent_increase
+
     def equip_weapon(self):
         pass
 
@@ -181,18 +192,6 @@ class Character(Entity):
     def equip_circlet(self):
         pass
 
-    def level_multiplier(self):
-        if self.level == 100:
-            return 2030.071808
-        elif self.level == 90:
-            return 1446.853458
-        elif self.level == 80:
-            return 1077.443668
-        elif self.level == 70:
-            return 756.640231
-        else:
-            raise Exception("Illegal level value.")
-
     def total_hp(self):
         return self.base_hp * (1 + self.hp_percent) + self.flat_hp
 
@@ -201,102 +200,6 @@ class Character(Entity):
 
     def total_def(self):
         return self.base_def * (1 + self.def_percent) + self.flat_def
-
-    def get_cm(self, cv, crit_ratio=1/2):
-        """
-        Artificial crit ratio
-        """
-        # if CRIT Rate is less than 1
-        if cv <= 1 + 1/crit_ratio:
-            return 1 + crit_ratio * pow(cv, 2) / (4 * pow(crit_ratio + 0.5, 2))
-        else:
-            return 1 + 1 * (cv - 2)
-
-    def effective(self, stat=NONE, base_flat_dmg=0, elemental_type=ANEMO, attack_type=NA, crit_ratio=1/2):
-        """
-        Effective DMG not accounting enemy stats and multiplicative reactions
-        Do NOT specify flat dmg buff and talent dmg simultaneously
-        """
-        assert self.__arg_map[stat] == 0 or base_flat_dmg == 0
-        elemental_type_dmg_bonus, elemental_type_cd, elemental_type_cr = self.__arg_map[elemental_type] 
-        attack_type_dmg_bonus, attack_type_cd, attack_type_cr = self.__arg_map[attack_type]
-        total_dmg_bonus = 1 + elemental_type_dmg_bonus + attack_type_dmg_bonus + self.all_dmg_bonus
-        total_cd = elemental_type_cd + attack_type_cd + self.cd
-        total_cr = elemental_type_cr + attack_type_cr + self.cr
-        cv = total_cd + 2 * total_cr
-        cm = self.get_cm(cv, crit_ratio)
-        return (self.__arg_map[stat] + base_flat_dmg) * total_dmg_bonus * cm
-
-    def swirl(self):
-        """
-        Transformative reaction DMG not accounting enemy resistance
-        """
-        emm = 16 * self.em + (2000 + self.em)
-        return 0.6 * self.level_multiplier() * (1 + emm + self.swirl_reaction_bonus)
-
-    def bloom(self):
-        emm = 16 * self.em + (2000 + self.em)
-        return 2 * self.level_multiplier() * (1 + emm + self.bloom_reaction_bonus)
-
-    def burgeon(self):
-        emm = 16 * self.em + (2000 + self.em)
-        return 3 * self.level_multiplier() * (1 + emm + self.burgeon_reaction_bonus)
-
-    def hyperbloom(self):
-        emm = 16 * self.em + (2000 + self.em)
-        return 3 * self.level_multiplier() * (1 + emm + self.hyperbloom_reaction_bonus)
-
-    def aggravate(self, attack_type=NA):
-        """
-        Works the same way as `effective_flat_buff`
-        """
-        emm = 5 * self.em + (1200 + self.em)
-        base_dmg = 1.15 * self.level_multiplier() * (1 + emm + self.aggravate_reaction_bonus)
-        return self.effective_flat_buff(base_dmg=base_dmg, elemental_type=ELECTRO, attack_type=attack_type)
-
-    def spread(self, attack_type=NA):
-        emm = 5 * self.em + (1200 + self.em)
-        base_dmg = 1.25 * self.level_multiplier() * (1 + emm + self.spread_reaction_bonus)
-        return self.effective_flat_buff(base_dmg=base_dmg, elemental_type=DENDRO, attack_type=attack_type)
-    
-    def electro_charged(self):
-        emm = 16 * self.em + (2000 + self.em)
-        return 1.2 * self.level_multiplier() * (1 + emm + self.electro_charged_reaction_bonus)
-
-    def burning(self):
-        emm = 16 * self.em + (2000 + self.em)
-        return 0.25 * self.level_multiplier() * (1 + emm + self.burning_reaction_bonus)
-
-    def overload(self):
-        emm = 16 * self.em + (2000 + self.em)
-        return 2 * self.level_multiplier() * (1 + emm + self.overload_reaction_bonus)
-
-    def superconduct(self):
-        emm = 16 * self.em + (2000 + self.em)
-        return 0.5 * self.level_multiplier() * (1 + emm + self.superconduct_reaction_bonus)
-
-    def __forward_multiplicative(self, reaction_bonus):
-        """
-        Multiplicative reaction multiplier
-        """
-        emm = 2.78 * self.em + (1400 + self.em)
-        return 2 * (1 + emm + reaction_bonus)
-
-    def __reverse_multiplicative(self, reaction_bonus):
-        emm = 2.78 * self.em + (1400 + self.em)
-        return 1.5 * (1 + emm + reaction_bonus)
-
-    def forward_vape(self):
-        return self.__forward_multiplicative(self.vaporize_reaction_bonus)
-
-    def reverse_vape(self):
-        return self.__reverse_multiplicative(self.vaporize_reaction_bonus)
-
-    def forward_melt(self):
-        return self.__forward_multiplicative(self.melt_reaction_bonus)
-
-    def reverse_melt(self):
-        return self.__reverse_multiplicative(self.melt_reaction_bonus)
 
     def swap(self):
         pass

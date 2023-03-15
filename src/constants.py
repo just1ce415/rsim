@@ -26,6 +26,20 @@ BURNING = "Burning"
 QUICKEN = "Quicken"
 FROZEN = "Frozen"
 
+# Reactions
+SWIRL = "Swirl"
+BLOOM = "Bloom"
+BURGEON = "Burgeon"
+HYPERBLOOM = "Hyperbloom"
+BURNING = "Burning"
+ELECTRO_CHARGED = "Electro-charged"
+OVERLOAD = "Overload"
+SUPERCONDUCT = "Superconduct"
+AGGRAVATE = "Aggravate"
+SPREAD = "Spread"
+FORWARD = "Forward vape/melt"
+REVERSE = "Reverse vape/melt"
+
 # Attack types / DMG types
 NA = "Normal Attack"
 CA = "Charged Attack"
