@@ -1,4 +1,4 @@
-from src.entities.characters.character import Character
+from src.entities.characters import Character
 
 class Event:
     """

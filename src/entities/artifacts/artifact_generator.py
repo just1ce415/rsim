@@ -4,6 +4,7 @@ from src.entities.artifacts.sands import Sands
 from src.entities.artifacts.goblet import Goblet
 from src.entities.artifacts.circlet import Circlet
 from src.damage import general_dmg
+from src.constants import *
 
 from typing import Dict
 
@@ -18,27 +19,16 @@ class ArtifactGenerator:
         self.goblet = goblet
         self.circlet = circlet
 
-        self.flat_hp_roll = 298.75
-        self.flat_atk_roll = 19.45
-        self.flat_def_roll = 23.15
-        self.hp_persent_roll = 0.0583
-        self.atk_percent_roll = 0.0583
-        self.def_percent_roll = 0.0729
-        self.em_roll = 23.31
-        self.er_roll = 0.0648
-        self.cd_roll = 0.0777
-        self.cr_roll = 0.0389
-
         self.max_flat_hp_rolls = 24
         self.max_flat_atk_rolls = 24
-        self.max_flat_def_rolls = 36
-        self.max_hp_percent_rolls = 36
-        self.max_atk_percent_rolls = 36
-        self.max_def_percent_rolls = 36
-        self.max_er_rolls = 36
-        self.max_em_rolls = 36
-        self.max_cd_rolls = 36
-        self.max_cr_rolls = 36
+        self.max_flat_def_rolls = 30
+        self.max_hp_percent_rolls = 30
+        self.max_atk_percent_rolls = 30
+        self.max_def_percent_rolls = 30
+        self.max_er_rolls = 30
+        self.max_em_rolls = 30
+        self.max_cd_rolls = 30
+        self.max_cr_rolls = 30
         self.max_rolls_total = 45
         self.min_rolls_total = 40
 
@@ -177,10 +167,17 @@ class ArtifactGenerator:
         stat_value - a float value between 0 and 100, where zero corresponds to DPR
         without substats and hundred corresponds to maximum possible DPR with substats
         (maximum substats 5(pieces) * (4+5)(substats each) = 45);
-        dmg_info - dmg_info of holder (check structure src/data.json)
-        er_info - er_info of holder (check structure src/data.json)
+        dmg_info - dmg_info of holder (check structure src/protocol.json)
+        er_info - er_info of holder (check structure src/protocol.json)
         """
-        pass
+        generated_energies = er_info["particle_energy_each_rotation"]
+        costs = er_info["cost_each_rotation"]
+        current_ers = er_info["actual_er_each_rotation"]
+        n_rotations = len(generated_energies)
+        recommended_ers = [costs[i] / generated_energies[i] for i in range(len(n_rotations))]
+        recommended_additional_ers = [recommended_ers[i] - current_ers[i] for i in range(n_rotations)]
+        target_er = max(recommended_additional_ers)
+        target_er = target_er - self.sands.main_er
 
     def __calculate_total_dmg(
             self, dmg_info, flat_hp, flat_atk, flat_def, hp_percent, atk_percent,
@@ -197,7 +194,7 @@ class ArtifactGenerator:
             new_em = em + dmg_info["em"]
             new_cd = cd + dmg_info["cd"]
             new_cr = cr + dmg_info["cr"]
-            total_dmg = total_dmg + general_dmg(
+            dmg = general_dmg(
                 dmg_info["base_hp"], dmg_info["base_atk"], dmg_info["base_def"], new_flat_hp,
                 new_flat_atk, new_flat_def, new_hp_percent, new_atk_percent, new_def_percent,
                 new_em, dmg_info["mv_hp"], dmg_info["mv_atk"], dmg_info["mv_def"], dmg_info["mv_em"],
@@ -208,7 +205,21 @@ class ArtifactGenerator:
                 dmg_info["is_superconduct"], dmg_info["is_forward_multiplicative"],
                 dmg_info["is_reverse_multiplicative"], dmg_info["level"], dmg_info["reaction_bonus"]
             )
+            total_dmg = total_dmg + dmg
         return total_dmg
+
+    def __constraint_function(self, flat_hp, flat_atk, flat_def, hp_percent, atk_percent,
+            def_percent, em, cd, cr):
+        return (flat_hp / self.flat_hp_roll + flat_atk / self.flat_atk_roll + flat_def / self.flat_def_roll +
+                hp_percent / self.hp_persent_roll + atk_percent / self.atk_percent_roll +
+                def_percent / self.def_percent_roll + em / self.em_roll + cd / self.cd_roll + cr / self.cr_roll - 
+                self.max_rolls_total)
+
+    def lagrangian(self, dmg_info, flat_hp, flat_atk, flat_def, hp_percent, atk_percent,
+            def_percent, em, cd, cr, la):
+        return self.__calculate_total_dmg(dmg_info, flat_hp, flat_atk, flat_def, hp_percent, atk_percent,
+            def_percent, em, cd, cr) + la * self.__constraint_function(flat_hp, flat_atk, flat_def, hp_percent,
+            atk_percent, def_percent, em, cd, cr)
 
     def sample_substats(
         self, flat_atk_rolls=-1, flat_hp_rolls=-1, flat_def_rolls=-1, hp_percent_rolls=-1,

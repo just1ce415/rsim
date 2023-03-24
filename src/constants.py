@@ -1,6 +1,19 @@
 
 FPS = 60
 
+# Rolls
+FLAT_HP_ROLL = 298.75
+FLAT_ATK_ROLL = 19.45
+FLAT_DEF_ROLL = 23.15
+HP_PERSENT_ROLL = 0.0583
+ATK_PERCENT_ROLL = 0.0583
+DEF_PERCENT_ROLL = 0.0729
+EM_ROLL = 23.31
+ER_ROLL = 0.0648
+CD_ROLL = 0.0777
+CR_ROLL = 0.0389
+MAX_ROLLS = 45
+
 NONE = "None"
 
 # Types of weapons
@@ -13,7 +26,7 @@ BOW = "Bow"
 # Affliction
 LIYUE = "Liyue"
 
-# Elements/Auras
+# Elements/Auras/Particles
 ANEMO = "Anemo"
 HYDRO = "Hydro"
 ELECTRO = "Electro"
@@ -26,8 +39,15 @@ BURNING = "Burning"
 QUICKEN = "Quicken"
 FROZEN = "Frozen"
 
+# Particle
+CLEAR = "Clear"
+
 # Reactions
 SWIRL = "Swirl"
+HYDRO_SWIRL = "Hydro swirl"
+ELECTRO_SWIRL = "Electro swirl"
+CRYO_SWIRL = "Cryo swirl"
+PYRO_SWIRL = "Pyro swirl"
 BLOOM = "Bloom"
 BURGEON = "Burgeon"
 HYPERBLOOM = "Hyperbloom"
@@ -39,6 +59,12 @@ AGGRAVATE = "Aggravate"
 SPREAD = "Spread"
 FORWARD = "Forward vape/melt"
 REVERSE = "Reverse vape/melt"
+CRYSTALLIZE = "Crystallize"
+HYDRO_CRYSTALLIZE = "Hydro crystallize"
+ELECTRO_CRYSTALLIZE = "Electro crystallize"
+CRYO_CRYSTALLIZE = "Cryo crystallize"
+PYRO_CRYSTALLIZE = "Pyro crystallize"
+SHATTER = "Shatter"
 
 # Attack types / DMG types
 NA = "Normal Attack"

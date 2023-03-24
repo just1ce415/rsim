@@ -1,6 +1,11 @@
 from src.entities.entity import Entity
+from src.entities.weapons.weapon import Weapon
+from src.entities.artifacts.flower import Flower
+from src.entities.artifacts.feather import Feather
+from src.entities.artifacts.sands import Sands
+from src.entities.artifacts.goblet import Goblet
+from src.entities.artifacts.circlet import Circlet
 from src.constants import *
-from src.damage import get_cm
 
 class Character(Entity):
     def __init__(
@@ -23,9 +28,10 @@ class Character(Entity):
         self.sands = None
         self.goblet = None
         self.circlet = None
+        self.__set_bonus_count = {}
         self.set_bonus1 = None
         self.set_bonus2 = None
-        self.set_bonus3 = None
+        self.dynamic_set_bonus = None
         self.talent_lvls = talent_lvls
         self.constallation = constallation
 
@@ -55,6 +61,7 @@ class Character(Entity):
         self.burning_reaction_bonus = 0
         self.vaporize_reaction_bonus = 0
         self.melt_reaction_bonus = 0
+        # Potentially add shatter
 
         self.anemo_dmg_bonus = 0
         self.hydro_dmg_bonus = 0
@@ -119,26 +126,6 @@ class Character(Entity):
 
         self.hp_level = 1
 
-        self.__arg_map = {
-            NONE: 0,
-            ATK: self.total_atk(),
-            HP: self.total_hp(),
-            DEF: self.total_def(),
-            ANEMO: (self.anemo_dmg_bonus, self.anemo_cd, self.anemo_cr),
-            HYDRO: (self.hydro_dmg_bonus, self.hydro_cd, self.hydro_cr),
-            ELECTRO: (self.electro_dmg_bonus, self.electro_cd, self.electro_cr),
-            DENDRO: (self.dendro_dmg_bonus, self.dendro_cd, self.dendro_cr),
-            CRYO: (self.cryo_dmg_bonus, self.cryo_cd, self.cryo_cr),
-            PYRO: (self.pyro_dmg_bonus, self.pyro_cd, self.pyro_cr),
-            GEO: (self.geo_dmg_bonus, self.geo_cd, self.geo_cr),
-            PHYS: (self.phys_dmg_bonus, self.phys_cd, self.phys_cr),
-            NA: (self.na_dmg_bonus, self.na_cd, self.na_cr),
-            CA: (self.ca_dmg_bonus, self.ca_cd, self.ca_cr),
-            PA: (self.pa_dmg_bonus, self.pa_cd, self.pa_cr),
-            SKILL: (self.skill_dmg_bonus, self.skill_cd, self.skill_cr),
-            BURST: (self.burst_dmg_bonus, self.burst_cd, self.burst_cr),
-        }
-
     def _activate_constallations(self):
         pass
 
@@ -174,23 +161,125 @@ class Character(Entity):
         percent_increase = healing / self.total_hp
         self.hp_level = self.hp_level + percent_increase
 
-    def equip_weapon(self):
-        pass
+    def equip_weapon(self, weapon:Weapon):
+        self.weapon = weapon
+        self.weapon.holder = self
+        self.base_atk += self.weapon.base
+        self.atk_percent += self.weapon.atk_percent
+        self.cd = self.weapon.cd
+        self.cr = self.weapon.cr
+        self.er = self.weapon.er
+        self.em = self.weapon.em
+        self.phys_dmg_bonus = self.weapon.phys_dmg_bonus
+        self.hp_percent = self.weapon.hp_percent
+        self.def_percent = self.weapon.def_percent
+        self.weapon.activate_permanent_passive()
+        if self.weapon_type != self.weapon.type:
+            print("[WARNING] Equipped weapon with invalid type.")
 
-    def equip_flower(self):
-        pass
+    def __check_set_bonus(self):
+        for key, value in self.__set_bonus_count.items():
+            if value not in (2, 4):
+                continue
+            if self.set_bonus1 == None:
+                self.set_bonus1 = key(value)
+            else:
+                if isinstance(self.set_bonus1, key):
+                    continue
+                self.set_bonus2 = key(value)
 
-    def equip_feather(self):
-        pass
+    def equip_flower(self, flower:Flower):
+        assert self.flower is None
+        self.flower = flower
+        self.flower.holder = self
+        self.flat_hp = self.flower.main_flat_hp
+        self.flat_atk = self.flower.sub_flat_atk
+        self.flat_def = self.flower.sub_flat_def
+        self.hp_percent = self.flower.sub_hp_percent
+        self.atk_percent = self.flower.sub_atk_percent
+        self.def_percent = self.flower.sub_def_percent
+        self.er = self.flower.sub_er
+        self.em = self.flower.sub_em
+        self.cd = self.feather.sub_cd
+        self.cr = self.feather.sub_cr
+        self.__set_bonus_count[self.flower.set_bonus] = self.__set_bonus_count.get(self.flower.set_bonus, 0) + 1
+        self.__check_set_bonus()
 
-    def equip_sands(self):
-        pass
+    def equip_feather(self, feather:Feather):
+        assert self.feather is None
+        self.feather = feather
+        self.feather.holder = self
+        self.flat_hp = self.feather.sub_flat_hp
+        self.flat_atk = self.feather.main_flat_atk
+        self.flat_def = self.feather.sub_flat_def
+        self.hp_percent = self.feather.sub_hp_percent
+        self.atk_percent = self.flower.sub_atk_percent
+        self.def_percent = self.sands.sub_def_percent
+        self.er = self.feather.sub_er
+        self.em = self.feather.sub_em
+        self.cd = self.feather.sub_cd
+        self.cr = self.feather.sub_cr
+        self.__set_bonus_count[self.feather.set_bonus] = self.__set_bonus_count.get(self.feather.set_bonus, 0) + 1
+        self.__check_set_bonus()
 
-    def equip_goblet(self):
-        pass
+    def equip_sands(self, sands:Sands):
+        assert self.sands is None
+        self.sands = sands
+        self.sands.holder = self
+        self.flat_hp = self.sands.sub_flat_hp
+        self.flat_atk = self.sands.sub_flat_atk
+        self.flat_def = self.sands.sub_flat_def
+        self.hp_percent = self.goblet.sub_hp_percent + self.sands.main_hp_percent
+        self.atk_percent = self.goblet.sub_atk_percent + self.sands.main_atk_percent
+        self.def_percent = self.goblet.sub_def_percent + self.sands.main_def_percent
+        self.er = self.sands.sub_er + self.sands.main_er
+        self.em = self.sands.sub_em + self.sands.main_em
+        self.cd = self.sands.sub_cd
+        self.cr = self.sands.sub_cr
+        self.__set_bonus_count[self.sands.set_bonus] = self.__set_bonus_count.get(self.sands.set_bonus, 0) + 1
+        self.__check_set_bonus()
 
-    def equip_circlet(self):
-        pass
+    def equip_goblet(self, goblet:Goblet):
+        assert self.goblet is None
+        self.goblet = goblet
+        self.goblet.holder = self
+        self.anemo_dmg_bonus = self.goblet.main_anemo_dmg_bonus
+        self.hydro_dmg_bonus = self.goblet.main_hydro_dmg_bonus
+        self.electro_dmg_bonus = self.goblet.main_electro_dmg_bonus
+        self.dendro_dmg_bonus = self.goblet.main_dendro_dmg_bonus
+        self.cryo_dmg_bonus = self.goblet.main_cryo_dmg_bonus
+        self.pyro_dmg_bonus = self.goblet.main_pyro_dmg_bonus
+        self.geo_dmg_bonus = self.goblet.main_geo_dmg_bonus
+        self.phys_dmg_bonus = self.goblet.main_phys_dmg_bonus
+        self.flat_hp = self.goblet.sub_flat_hp
+        self.flat_atk = self.goblet.sub_flat_atk
+        self.flat_def = self.goblet.sub_flat_def
+        self.hp_percent = self.circlet.sub_hp_percent + self.goblet.main_hp_percent
+        self.atk_percent = self.circlet.sub_atk_percent + self.goblet.main_atk_percent
+        self.def_percent = self.circlet.sub_def_percent + self.goblet.main_def_percent
+        self.er = self.goblet.sub_er
+        self.em = self.goblet.sub_em + self.goblet.main_em
+        self.cd = self.goblet.sub_cd
+        self.cr = self.goblet.sub_cr
+        self.__set_bonus_count[self.goblet.set_bonus] = self.__set_bonus_count.get(self.goblet.set_bonus, 0) + 1
+        self.__check_set_bonus()
+
+    def equip_circlet(self, circlet:Circlet):
+        assert self.circlet is None
+        self.circlet = circlet
+        self.circlet.holder = self
+        self.flat_hp = self.circlet.sub_flat_hp
+        self.flat_atk = self.circlet.sub_flat_atk
+        self.flat_def = self.circlet.sub_flat_def
+        self.hp_percent = self.flower.sub_hp_percent + self.circlet.main_hp_percent
+        self.atk_percent = self.flower.sub_atk_percent + self.circlet.main_atk_percent
+        self.def_percent = self.flower.sub_def_percent + self.circlet.main_def_percent
+        self.er = self.circlet.sub_er
+        self.em = self.circlet.sub_em + self.circlet.main_em
+        self.cd = self.circlet.sub_cd + self.circlet.main_cd
+        self.cr = self.circlet.sub_cr + self.circlet.main_cr
+        self.__set_bonus_count[self.circlet.set_bonus] = self.__set_bonus_count.get(self.circlet.set_bonus, 0) + 1
+        self.__check_set_bonus()
 
     def total_hp(self):
         return self.base_hp * (1 + self.hp_percent) + self.flat_hp
@@ -200,6 +289,9 @@ class Character(Entity):
 
     def total_def(self):
         return self.base_def * (1 + self.def_percent) + self.flat_def
+
+    def wait(self, n_seconds:float):
+        pass
 
     def swap(self):
         pass
@@ -224,3 +316,16 @@ class Character(Entity):
 
     def elemental_burst(self):
         pass
+
+    def time_passes(self, seconds:float):
+        self.skill_cd -= seconds
+        self.burst_cd -= seconds
+
+    def hitlag_extension(self, seconds:float):
+        pass
+
+    def notify(self, event):
+        pass
+
+    def set_env(self, env):
+        self.env = env

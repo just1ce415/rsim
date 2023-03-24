@@ -1,5 +1,3 @@
-from src.event import Event
-
 class Entity:
     def __init__(self):
         pass
@@ -10,5 +8,11 @@ class Entity:
     def hitlag_extension(self, seconds:float):
         pass
 
-    def notify(self, event:Event):
+    def notify(self, event):
+        pass
+
+    def timeout(self):
+        pass
+
+    def apply_element(self, element:str, gu:float):
         pass

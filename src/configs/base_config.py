@@ -20,7 +20,7 @@ class BaseConfig:
     def set_artifact_params(self, data):
         """
         :params:
-        data - check format in src/data.json
+        data - check format in src/protocol.json
         """
         self.er_info = data["er_info"]
         self.dmg_info = data["dmg_info"]
