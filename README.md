@@ -34,6 +34,8 @@
 
 - Account for poorly configured rotation.
 
+- Account for defensive utilities such as damage reduction and resistance to interruption, which is impossible to evaluate in "non-spatial dummy" setup.
+
 ### Important: CAVEATS
 
 - Shield strength does not reduce damage taken by shield, but rather increases its HP (while in game it's opposite).
