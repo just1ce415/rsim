@@ -48,6 +48,6 @@
 
 - Character animations are coded in such way that it's assumed they are cancelled every time, when it's possible and optimal. In order chain of actions make feel to be less mechanic, character waits some time after performing action during after-animation.
 
-- For multitarget case, it's assumed, that enemies are close enough in order quadratic scaling to work completely.
-
 - Enemies are just dummies who does NOT attack and stay in one place.
+
+- For multitarget case, it's assumed, that enemies are close enough in order for quadratic scaling to work completely.
