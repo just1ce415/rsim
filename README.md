@@ -52,4 +52,4 @@
 
 - Enemies are just dummies who does NOT attack and stay in one place.
 
-- For multitarget case, it's assumed, that enemies are close enough in order for quadratic scaling to work completely.
+- For multitarget case, it's assumed, that enemies are close enough in order for quadratic scaling to work completely. However, application of some character's skills may benefit from enemies being not too close from each other (e.g. Yaoyao), therefore such skills can be configured to apply element in single target.
