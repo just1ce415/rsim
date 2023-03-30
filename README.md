@@ -44,7 +44,7 @@
 
 - Some character skills effeciency of which is depend on spatial data (e.g. Yaoyao elemetal skill) has special `uptime` parameter in order to account for that.
 
-- Code allows user to use skills and bursts even duraing cooldown or without enough energy, because rotation cannot be changed in the code by design (to account for that, please, write realistic rotations).
+- Code allows user to use bursts without enough energy for ER optimization and because rotation cannot be changed in the code by design (to account for that, please, write realistic rotations).
 
 - Simulator actually runs two simulations: test one (where data about damage distribution and energy requirements is collected) and main one.
 
