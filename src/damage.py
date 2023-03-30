@@ -24,7 +24,19 @@ def level_multiplier(level):
     elif level == 0:
         return 0
     else:
-        raise Exception("Illegal level value.")
+        raise ValueError("Illegal level value.")
+
+def base_shield_hp(level):
+    if level == 90:
+        return 1851
+    elif level == 80:
+        return 1597
+    elif level == 70:
+        return 1315
+    elif level == 0:
+        return 0
+    else:
+        raise ValueError("Illegal level value")
 
 def effective_talent(base_stat, cd, cr, crit_ratio, dmg_bonus):
     """
@@ -140,3 +152,13 @@ def multipicative_reaction_factor(reaction, em, reaction_bonus):
         special_multiplier = reaction
     emm = 2.78 * em / (1400 + em)
     return special_multiplier * (1 + emm + reaction_bonus)
+
+def shield_hp(stat, mv, shield_strength):
+    return stat * mv * shield_strength
+
+def crystallize_shield_hp(level, em, shield_strength):
+    emm = 4.44*em / (em + 1400)
+    return base_shield_hp(level) * emm * shield_strength
+
+def healing(stat, mv, healing_bonus, healing_received):
+    return stat * mv * healing_bonus * healing_received

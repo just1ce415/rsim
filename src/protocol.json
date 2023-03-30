@@ -44,8 +44,10 @@
         "character3": {},
         "character4": {}
     },
-    "healing_info": {
+    "defensive_info": {
         "character1": {
+            "time": [],
+            "shielding_instances": [],
             "healing_instances": []
         },
         "character2": {},

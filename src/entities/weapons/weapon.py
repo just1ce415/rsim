@@ -1,4 +1,4 @@
-from src.entities.entity import Entity
+from src.entities.characters.character import Character, Entity
 from src.entities.other.gauge_status import GaugeStatus
 from src.constants import *
 
@@ -12,6 +12,8 @@ class Weapon(Entity):
         self._activate_general_info()
         if self.type in (SWORD, POLEARM, CLAYMORE):
             self.gauge_status = GaugeStatus()
+        else:
+            self.gauge_status = None
 
         # Stats
         self.base = 0
@@ -27,7 +29,10 @@ class Weapon(Entity):
         self._activate_passive()
         self._activate_refinement()
 
-    def activate_permanent_passive(self):
+    def set_holder(self, holder:Character):
+        self.holder = holder
+
+    def _activate_permanent_passive(self):
         pass
 
     def _activate_general_info(self):
@@ -44,3 +49,25 @@ class Weapon(Entity):
 
     def _activate_passive(self):
         pass
+
+    def time_passes(self, seconds: float):
+        pass
+
+    def hitlag_extension(self, seconds: float):
+        pass
+
+    def equip(self, character:Character):
+        self.set_holder(character)
+        self.holder.weapon = self
+        self.holder.base_atk += self.base
+        self.holder.atk_percent += self.atk_percent
+        self.holder.all_cd += self.cd
+        self.holder.all_cr += self.cr
+        self.holder.er += self.er
+        self.holder.em += self.em
+        self.holder.phys_dmg_bonus += self.phys_dmg_bonus
+        self.holder.hp_percent += self.hp_percent
+        self.holder.def_percent += self.def_percent
+        self.holder.weapon._activate_permanent_passive()
+        if self.holder.weapon_type != self.type:
+            print("[WARNING] Equipped weapon with invalid type.")

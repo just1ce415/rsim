@@ -1,6 +1,5 @@
 from src.constants import *
 from src.entities.entity import Entity
-from src.entities.summons_and_adaptives.reaction_summons import *
 
 from typing import List
 
@@ -18,13 +17,17 @@ class GaugeStatus(Entity):
             DENDRO: [0, 0],
             CRYO: [0, 0],
             PYRO: [0, 0],
-            GEO: [0, 0]
+            GEO: [0, 0],
+            FROZEN: [0, 0],
+            QUICKEN: [0, 0],
+            BURNING: [0, 0]
         }
 
     def time_passes(self, seconds: float):
         for key, value in self.current_auras.items():
-            if value[1] != 0:
-                gu_decayed = seconds / value[1]
+            # Dendro does not decay while burning
+            if value[1] != 0 and ((key != DENDRO and key != QUICKEN) or self.current_auras[BURNING] == [0, 0]):
+                gu_decayed = seconds * value[1]
                 self.current_auras[key][0] -= gu_decayed
                 if self.current_auras[key][0] <= 0:
                     self.current_auras[key][0] = 0
@@ -36,7 +39,7 @@ class GaugeStatus(Entity):
         """
         for key, value in self.current_auras.items():
             if value[1] != 0:
-                gu_recovered = seconds / value[1]
+                gu_recovered = seconds * value[1]
                 self.current_auras[key][0] += gu_recovered
 
     def apply_element(self, element:str, gu:float) -> List[str]:
@@ -60,6 +63,7 @@ class GaugeStatus(Entity):
         responce application - List[element, gu] - element and gauge units of the response
         application in case of swirl
         """
+        from src.entities.summons_and_adaptives.reaction_summons import DendroCore
         reactions = []
         if gu <= 0:
             return reactions
@@ -89,11 +93,14 @@ class GaugeStatus(Entity):
                 # be consumed, but no reaction will be triggered
                 if 0.5*gu >= self.current_auras[CRYO][0]:
                     reactions.append([CRYO_SWIRL, 0.6, 1, None, [CRYO, (self.current_auras[CRYO][0] - 0.04) * 1.25 + 1]])
-                    gu = 0.5*gu - self.current_auras[CRYO][0]
+                    gu = 2*(0.5*gu - self.current_auras[CRYO][0])
                     self.current_auras[CRYO] = [0, 0]
-                    self.current_auras[FROZEN][0] = max(self.current_auras[FROZEN][0] - gu*0.5, 0)
-                    if self.current_auras[FROZEN][0] == 0:
-                        self.current_auras[FROZEN][1] = 0
+                    if 0.5*gu >= self.current_auras[FROZEN][0]:
+                        gu = 2*(0.5*gu - self.current_auras[FROZEN][0])
+                        self.current_auras[FROZEN] = [0, 0]
+                    else:
+                        self.current_auras[FROZEN][0] -= 0.5*gu
+                        gu = 0
                 else:
                     reactions.append([CRYO_SWIRL, 0.6, 1, None, [CRYO, (gu - 0.04) * 1.25 + 1]])
                     self.current_auras[CRYO][0] -= 0.5 * gu
@@ -105,190 +112,252 @@ class GaugeStatus(Entity):
                     return reactions
 
         elif element == HYDRO:
+            application = True
             if self.current_auras[PYRO] != [0, 0]:
+                application = False
                 reactions.append([FORWARD, 2, 0, None, None])
                 # Both burning and pyro gauges will be consumed simultaneously and trigger only one reaction
+                gu_b = 100
                 if self.current_auras[BURNING] != [0, 0]:
-                    if self.current_auras[BURNING][0] < 2*gu:
-                        self.current_auras[BURNING] = [0, 0]
-                    else:
-                        self.current_auras[BURNING][0] -= 2*gu
+                    gu_b = self.__consume_aura(BURNING, gu, 2)
                 gu = self.__consume_aura(PYRO, gu, 2)
+                gu = min(gu, gu_b)
+                if gu == 0:
+                    return reactions
+            if self.current_auras[BURNING] != [0, 0]:
+                application = False
+                reactions.append([FORWARD, 2, 0, None, None])
+                gu = self.__consume_aura(BURNING, gu, 2)
                 if gu == 0:
                     return reactions
             if self.current_auras[ANEMO] != [0, 0]:
+                application = False
                 if gu == 0:
                     return reactions
                 reactions.append([HYDRO_SWIRL, 0.6, 1, None, [HYDRO, (gu - 0.04) * 1.25 + 1]])
                 gu = 0
                 return reactions
             if self.current_auras[CRYO] != [0, 0]:
+                application = False
                 reactions.append([FROZEN, 0, 0, None, None])
                 gu = self.__freeze(CRYO, gu)
                 if gu == 0:
                     return reactions
             if self.current_auras[DENDRO] != [0, 0]:
+                application = False
                 # Hydro will consume dendro and quicken simulteneously
-                if self.current_auras[QUICKEN][0] < 0.5*gu:
-                    self.current_auras[QUICKEN] = [0, 0]
-                else:
-                    self.current_auras[QUICKEN][0] -= 0.5*gu
+                gu_q = 100
+                if self.current_auras[QUICKEN] != [0, 0]:
+                    gu_q = self.__consume_aura(QUICKEN, gu, 0.5)
                 gu = self.__consume_aura(DENDRO, gu, 0.5)
+                gu = min(gu, gu_q)
                 reactions.append([BLOOM, 0, 0, DendroCore(), None])
                 if gu == 0:
                     return reactions
             # Implies that quicken was without dendro
             if self.current_auras[QUICKEN] != [0, 0]:
+                application = False
                 gu = self.__consume_aura(QUICKEN, gu, 0.5)
                 reactions.append([BLOOM, 0, 0, DendroCore(), None])
                 if gu == 0:
                     return reactions
             if self.current_auras[ELECTRO] != [0, 0]:
+                application = False
                 return self.__electro_charged(reactions, ELECTRO, HYDRO, gu)
-            if gu != 0:
+            if application:
                 self.__pure_application(HYDRO, gu)
 
         elif element == ELECTRO:
+            application = True
             ## Aggravate does not consume quicken and lets trigger just to be applied
             if self.current_auras[QUICKEN] != [0, 0]:
                 reactions.append([AGGRAVATE, 1.15, 1, None, None])
             if self.current_auras[PYRO] != [0, 0]:
+                application = False
                 reactions.append([OVERLOAD, 2, 1, None, None])
+                gu_b = 100
+                if self.current_auras[BURNING] != [0, 0]:
+                    gu_b = self.__consume_aura(BURNING, gu, 1)
                 gu = self.__consume_aura(PYRO, gu, 1)
+                gu = min(gu, gu_b)
                 if gu == 0:
                     return reactions
             if self.current_auras[ANEMO] != [0, 0]:
+                application = False
                 if gu == 0:
                     return reactions
                 reactions.append([ELECTRO_SWIRL, 0.6, 1, None, [ELECTRO, (gu - 0.04) * 1.25 + 1]])
                 gu = 0
                 return reactions
             if self.current_auras[HYDRO] != [0, 0]:
-                return self.__electro_charged(reactions, HYDRO, ELECTRO, gu)
+                if self.current_auras[FROZEN] == [0, 0]:
+                    application = False
+                    return self.__electro_charged(reactions, HYDRO, ELECTRO, gu)
             if self.current_auras[CRYO] != [0, 0]:
+                application = False
                 reactions.append([SUPERCONDUCT, 0.5, 1, None, None])
                 # Consumes cryo and then frozen if electro gauge is fully consumed, but only 1 superconduct occurs
-                if gu >= self.current_auras[CRYO][0]:
-                    gu = gu - self.current_auras[CRYO][0]
-                    self.current_auras[CRYO] = [0, 0]
-                    self.current_auras[FROZEN][0] = max(self.current_auras[FROZEN][0] - gu, 0)
-                    if self.current_auras[FROZEN][0] == 0:
-                        self.current_auras[FROZEN][1] = 0
-                else:
-                    self.current_auras[CRYO][0] -= gu
-                    gu = 0
+                gu = self.__consume_aura(CRYO, gu, 1)
+                if self.current_auras[FROZEN] != [0, 0] and gu != 0:
+                    gu = self.__consume_aura(FROZEN, gu, 1)
+                if gu == 0:
                     return reactions
+            # Implies there was no cryo, only frozen
             if self.current_auras[FROZEN] != [0, 0]:
+                application = False
                 reactions.append([SUPERCONDUCT, 0.5, 1, None, None])
                 gu = self.__consume_aura(FROZEN, gu, 1)
                 if gu == 0:
                     return reactions
             if self.current_auras[DENDRO] != [0, 0]:
+                application = False
                 reactions.append([QUICKEN, 0, 0, None, None])
                 gu = self.__quicken(DENDRO, gu)
                 if gu == 0:
                     return reactions
-            if gu != 0:
+            if application:
                 self.__pure_application(ELECTRO, gu)
 
         elif element == DENDRO:
+            application = True
             ## Spread does not consume quicken and lets trigger just to be applied
             if self.current_auras[QUICKEN] != [0, 0]:
                 reactions.append([SPREAD, 1.25, 1, None, None])
             if self.current_auras[ELECTRO] != [0, 0]:
+                application = False
                 reactions.append([QUICKEN, 0, 0, None, None])
                 gu = self.__quicken(ELECTRO, gu)
                 if gu == 0:
                     return reactions
             if self.current_auras[PYRO] != [0, 0]:
+                application = False
                 reactions = self.__burning(reactions, PYRO, DENDRO, gu)
                 return reactions
             if self.current_auras[HYDRO] != [0, 0]:
+                application = False
                 reactions.append([BLOOM, 0, 0, DendroCore(), None])
                 gu = self.__consume_aura(HYDRO, gu, 2)
+                if self.current_auras[QUICKEN] != [0, 0]:
+                    reactions.append([BLOOM, 0, 0, DendroCore(), None])
+                    if 2*self.current_auras[QUICKEN][0] > self.current_auras[HYDRO][0]:
+                        self.current_auras[QUICKEN][0] = (2*self.current_auras[QUICKEN][0] - self.current_auras[HYDRO][0]) * 0.5
+                        self.current_auras[HYDRO] = [0, 0]
+                    elif 2*self.current_auras[QUICKEN][0] < self.current_auras[HYDRO][0]:
+                        self.current_auras[HYDRO][0] = self.current_auras[HYDRO][0] - 2*self.current_auras[QUICKEN][0]
+                        self.current_auras[QUICKEN] = [0, 0]
                 if gu == 0:
                     return reactions
-            if gu != 0:
+            if application:
                 self.__pure_application(DENDRO, gu)
 
         elif element == CRYO:
+            application = True
             if self.current_auras[ELECTRO] != [0, 0]:
+                application = False
                 reactions.append([SUPERCONDUCT, 0.5, 1, None, None])
                 gu = self.__consume_aura(ELECTRO, gu, 1)
                 if gu == 0:
                     return reactions
             if self.current_auras[PYRO] != [0, 0]:
+                application = False
+                # Consume both pyro and burning simultaneously
+                gu_b = 100
+                if self.current_auras[BURNING] != [0, 0]:
+                    gu_b = self.__consume_aura(BURNING, gu, 0.5)
                 reactions.append([REVERSE, 1.5, 0, None, None])
                 gu = self.__consume_aura(PYRO, gu, 0.5)
+                gu = min(gu_b, gu)
+                if gu == 0:
+                    return reactions
+            # Implies that there was burning without pyro
+            if self.current_auras[BURNING] != [0, 0]:
+                application = False
+                reactions.append([REVERSE, 1.5, 0, None, None])
+                gu = self.__consume_aura(BURNING, gu, 0.5)
                 if gu == 0:
                     return reactions
             if self.current_auras[ANEMO] != [0, 0]:
+                application = False
                 reactions.append([CRYO_SWIRL, 0.6, 1, None, [CRYO, (gu - 0.04) * 1.25 + 1]])
                 gu = 0
                 return reactions
             if self.current_auras[HYDRO] != [0, 0]:
-                return self.__freeze(HYDRO, gu)
-            if gu != 0:
+                application = False
+                reactions.append([FROZEN, 0, 0, None, None])
+                gu = self.__freeze(HYDRO, gu)
+                if gu == 0:
+                    return reactions
+            if application:
                 self.__pure_application(CRYO, gu)
 
         elif element == PYRO:
+            application = True
             if self.current_auras[ELECTRO] != [0, 0]:
+                application = False
                 reactions.append([OVERLOAD, 2, 1, None, None])
                 gu = self.__consume_aura(ELECTRO, gu, 1)
                 if gu == 0:
                     return reactions
             if self.current_auras[ANEMO] != [0, 0]:
+                application = False
                 reactions.append([PYRO_SWIRL, 0.6, 1, None, [PYRO, (gu - 0.04) * 1.25 + 1]])
                 gu = 0
                 return reactions
             if self.current_auras[HYDRO] != [0, 0]:
+                application = False
                 # By applying pyro on hydro+frozen you trigger only melt
                 if self.current_auras[FROZEN] == [0, 0]:
                     reactions.append([REVERSE, 1.5, 0, None, None])
                     gu = self.__consume_aura(HYDRO, gu, 0.5)
             if self.current_auras[CRYO] != [0, 0]:
+                application = False
                 reactions.append([FORWARD, 2, 0, None, None])
                 # Frozen and cryo are consumed simultaneosly
+                gu_f = 100
                 if self.current_auras[FROZEN] != [0, 0]:
-                    if self.current_auras[FROZEN][0] < 2*gu:
-                        self.current_auras[FROZEN] = [0, 0]
-                    else:
-                        self.current_auras[FROZEN][0] -= 2*gu
+                    gu_f = self.__consume_aura(FROZEN, gu, 2)
                 gu = self.__consume_aura(CRYO, gu, 2)
+                gu = min(gu, gu_f)
                 if gu == 0:
                     return reactions
             # Implies frozen without cryo
-            if self.current_auras[FROZEN] != 0:
+            if self.current_auras[FROZEN] != [0, 0]:
+                application = False
                 reactions.append([FORWARD, 2, 0, None, None])
                 gu = self.__consume_aura(FROZEN, gu, 2)
                 if gu == 0:
                     return reactions
             if self.current_auras[DENDRO] != [0, 0]:
+                application = False
                 reactions = self.__burning(reactions, DENDRO, PYRO, gu)
                 return reactions
-            if gu != 0:
+            if self.current_auras[QUICKEN] != [0, 0]:
+                application = False
+                reactions = self.__burning(reactions, QUICKEN, PYRO, gu)
+                return reactions
+            if application:
                 self.__pure_application(PYRO, gu)
 
         elif element == GEO:
-            if self.current_auras[FROZEN] != 0:
+            if self.current_auras[FROZEN] != [0, 0]:
                 reactions.append([SHATTER, 1.5, 1, None, None])
                 self.current_auras[FROZEN] = [0, 0]
-            if self.current_auras[ELECTRO] != 0:
+            if self.current_auras[ELECTRO] != [0, 0]:
                 reactions.append([ELECTRO_CRYSTALLIZE, 0, 0, None, None])
                 gu = self.__cristallize(ELECTRO, gu)
                 if gu == 0:
                     return reactions
-            if self.current_auras[PYRO] != 0:
+            if self.current_auras[PYRO] != [0, 0]:
                 reactions.append([PYRO_CRYSTALLIZE, 0, 0, None, None])
                 gu = self.__cristallize(PYRO, gu)
                 if gu == 0:
                     return reactions
-            if self.current_auras[HYDRO] != 0:
+            if self.current_auras[HYDRO] != [0, 0]:
                 reactions.append([HYDRO_CRYSTALLIZE, 0, 0, None, None])
                 gu = self.__cristallize(HYDRO, gu)
                 if gu == 0:
                     return reactions
-            if self.current_auras[CRYO] != 0:
+            if self.current_auras[CRYO] != [0, 0]:
                 reactions.append([CRYO_CRYSTALLIZE, 0, 0, None, None])
                 gu = self.__cristallize(CRYO, gu)
                 if gu == 0:
@@ -296,21 +365,26 @@ class GaugeStatus(Entity):
         return reactions
 
     def __burning(self, reactions:List, aura:str, trigger:str, trigger_gu:float):
+        from src.entities.summons_and_adaptives.reaction_summons import Burning
         if self.current_auras[trigger] != [0, 0]:
             if self.current_auras[trigger][0] < trigger_gu:
                 self.current_auras[trigger][0] = 0.8*trigger_gu
                 if trigger == PYRO:
                     self.current_auras[PYRO][1] = 1 / (35/(4*trigger_gu) + 25/8)
             reactions.append([BURNING, 0, 0, None, None])
+        elif trigger == PYRO and self.current_auras[BURNING] != [0, 0]:
+            reactions.append([BURNING, 0, 0, None, None])
+            self.current_auras[trigger][0] = 0.8*trigger_gu
+            self.current_auras[PYRO][1] = 1 / (35/(4*trigger_gu) + 25/8)
         else:
             self.current_auras[trigger][0] = 0.8*trigger_gu
             self.current_auras[trigger][1] = 1 / (35/(4*trigger_gu) + 25/8)
             self.current_auras[BURNING] = [2, 0]
             self.current_auras[PYRO] = [1, 1 / (35/4 + 25/8)]
-            self.current_auras[DENDRO][0] -= 0.4
+            self.current_auras[DENDRO][0] -= 0.1
             # Quicken and dendro are consumed simultaneously
             if self.current_auras[QUICKEN] != [0, 0]:
-                self.current_auras[QUICKEN] -= 0.4
+                self.current_auras[QUICKEN][0] -= 0.1
                 if self.current_auras[QUICKEN][0] < 0:
                     self.current_auras[QUICKEN] = [0, 0]
             if self.current_auras[DENDRO][0] <= 0:
@@ -319,6 +393,7 @@ class GaugeStatus(Entity):
         return reactions
 
     def __electro_charged(self, reactions:List, aura:str, trigger:str, trigger_gu:float):
+        from src.entities.summons_and_adaptives.reaction_summons import ElectroCharged
         if self.current_auras[trigger] != [0, 0]:
             if self.current_auras[trigger][0] < trigger_gu:
                 self.current_auras[trigger][0] = 0.8*trigger_gu
@@ -336,7 +411,7 @@ class GaugeStatus(Entity):
         return reactions
 
     def __consume_aura(self, aura:str, trigger_gu:float, reaction_multiplier:float):
-        if self.current_auras[aura][0] < reaction_multiplier*trigger_gu:
+        if self.current_auras[aura][0] <= reaction_multiplier*trigger_gu:
             trigger_gu = (reaction_multiplier*trigger_gu - self.current_auras[aura][0]) * 1/reaction_multiplier
             self.current_auras[aura] = [0, 0]
         else:
@@ -354,8 +429,12 @@ class GaugeStatus(Entity):
         return trigger_gu
 
     def __swirl(self, reactions:List, aura:str, trigger_gu:float):
-        cap = PYRO if aura == BURNING else aura
-        cap = CRYO if aura == FROZEN else aura
+        if aura == BURNING:
+            cap = PYRO
+        elif aura == FROZEN:
+            cap = CRYO
+        else:
+            cap = aura
         if 0.5*trigger_gu >= self.current_auras[aura][0]:
             reactions.append(["{} swirl".format(cap), 0.6, 1, None, [cap, (self.current_auras[aura][0] - 0.04) * 1.25 + 1]])
             trigger_gu = (0.5*trigger_gu - self.current_auras[aura][0])*2
@@ -369,23 +448,25 @@ class GaugeStatus(Entity):
     def __freeze(self, aura:str, trigger_gu:float):
         frozen_gu = 2 * min(self.current_auras[aura][0], trigger_gu)
         frozen_duration = 2 * pow(5*frozen_gu + 4, 1/2) - 4
-        self.current_auras[FROZEN][0] = frozen_gu
-        self.current_auras[FROZEN][1] = 0.8 / frozen_duration
+        if frozen_gu > self.current_auras[FROZEN][0]:
+            self.current_auras[FROZEN][0] = frozen_gu
+            self.current_auras[FROZEN][1] = frozen_gu / frozen_duration
         return self.__consume_aura(aura, trigger_gu, 1)
 
     def __quicken(self, aura:str, trigger_gu:float):
         quicken_gu = min(self.current_auras[aura][0], trigger_gu)
         quicken_duration = 5 * quicken_gu + 6
-        self.current_auras[QUICKEN][0] = quicken_gu
-        self.current_auras[QUICKEN][1] = 0.8 / quicken_duration
+        if quicken_gu > self.current_auras[QUICKEN][0]:
+            self.current_auras[QUICKEN][0] = quicken_gu
+            self.current_auras[QUICKEN][1] = quicken_gu / quicken_duration
         return self.__consume_aura(aura, trigger_gu, 1)
 
     def __pure_application(self, element:str, gu:float):
         if self.current_auras[element] != [0, 0]:
-            if self.current_auras[element][0] < gu:
+            if self.current_auras[element][0] < 0.8*gu:
                 self.current_auras[element][0] = 0.8*gu
                 if element == PYRO:
-                    self.current_auras[1] = 1 / (35/(4*gu) + 25/8)
+                    self.current_auras[element][1] = 1 / (35/(4*gu) + 25/8)
         else:
             self.current_auras[element][0] = 0.8*gu
             self.current_auras[element][1] = 1 / (35/(4*gu) + 25/8)

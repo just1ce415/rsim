@@ -1,14 +1,16 @@
-from src.entities.entity import Entity
-from src.environment import Environment
+from src.entities.characters.character import Character, Entity
 from src.constants import *
 
+from typing import List
+
 class ParticleSet(Entity):
-    def __init__(self, env:Environment, n_particles:int, element:str):
-        self.env = env
+    def __init__(self, team:List[Character], n_particles:int, element:str):
+        self.team = team
         self.n_particles = n_particles
         self.element = element
         # Seconds before particles will reach character
         self.lifetime = 1.2
+        self.timedout = False
 
     def hitlag_extension(self, seconds: float):
         """
@@ -17,13 +19,15 @@ class ParticleSet(Entity):
         pass
 
     def time_passes(self, seconds: float):
+        if self.timedout:
+            return
         self.lifetime -= seconds
         if self.lifetime <= 0:
             self.__funnel()
             self.timeout()
 
     def __funnel(self):
-        for character in self.env.team:
+        for character in self.team:
             if self.element == CLEAR:
                 if character.on_field:
                     character.energy += self.n_particles * 2
@@ -38,12 +42,6 @@ class ParticleSet(Entity):
                     character.energy += self.n_particles * 1
                 elif not character.on_field and self.element != character.elemental_type:
                     character.energy += self.n_particles * 0.6
-        self.env.loggers += "[INFO]: t={}; {} {} particles were funneled to the team.\n".format(
-            self.env.time_passed, self.n_particles, self.element
-        )
-
 
     def timeout(self):
-        for i, particle_set in enumerate(self.env.particle_sets):
-            if particle_set == self:
-                del self.env.particle_sets[i]
+        self.timedout = True

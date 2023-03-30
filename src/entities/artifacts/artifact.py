@@ -1,15 +1,16 @@
 from src.entities.artifacts.set_bonus import SetBonus
+from src.entities.characters.character import Character
 from src.constants import *
 
 from random import choice
 
 class Artifact:
     def __init__(
-            self, set_bonus:SetBonus, main_flat_hp=0, main_flat_atk=0, main_atk_percent=0,
-            main_hp_percent=0, main_def_percent=0, main_er=0, main_em=0, main_anemo_dmg_bonus=0,
-            main_hydro_dmg_bonus=0, main_electro_dmg_bonus=0, main_dendro_dmg_bonus=0,
-            main_cryo_dmg_bonus=0, main_pyro_dmg_bonus=0, main_geo_dmg_bonus=0,
-            main_phys_dmg_bonus=0, main_cd=0, main_cr=0, main_hb=0, flat_hp_rolls=0,
+            self, set_bonus, main_flat_hp=0.0, main_flat_atk=0.0, main_atk_percent=0.0,
+            main_hp_percent=0.0, main_def_percent=0.0, main_er=0.0, main_em=0.0, main_anemo_dmg_bonus=0.0,
+            main_hydro_dmg_bonus=0.0, main_electro_dmg_bonus=0.0, main_dendro_dmg_bonus=0.0,
+            main_cryo_dmg_bonus=0.0, main_pyro_dmg_bonus=0.0, main_geo_dmg_bonus=0.0,
+            main_phys_dmg_bonus=0.0, main_cd=0.0, main_cr=0.0, main_hb=0.0, flat_hp_rolls=0,
             flat_atk_rolls=0, flat_def_rolls=0, hp_percent_rolls=0,
             atk_percent_rolls=0, def_percent_rolls=0, er_rolls=0,
             em_rolls=0, cd_rolls=0, cr_rolls=0
@@ -38,7 +39,7 @@ class Artifact:
 
         assert (flat_hp_rolls + flat_atk_rolls + flat_def_rolls + hp_percent_rolls +
             atk_percent_rolls + def_percent_rolls + er_rolls + em_rolls + 
-            cd_rolls + cr_rolls <= MAX_ROLLS
+            cd_rolls + cr_rolls <= MAX_ROLLS / 5
             )
 
         possible_rolls = [1, 0.9, 0.8, 0.7]
@@ -52,6 +53,9 @@ class Artifact:
         self.sub_em = em_rolls * EM_ROLL * choice(possible_rolls)
         self.sub_cd = cd_rolls * CD_ROLL * choice(possible_rolls)
         self.sub_cr = cr_rolls * CR_ROLL * choice(possible_rolls)
+
+    def set_holder(self, holder:Character):
+        self.holder = holder
 
     def __str__(self):
         if self.main_flat_hp:

@@ -1,7 +1,8 @@
-from src.entities.artifacts.artifact import Artifact, SetBonus
+from src.entities.artifacts.artifact import Artifact
+from src.entities.characters.character import Character
 
 class Goblet(Artifact):
-    def __init__(self, set_bonus:SetBonus, main_atk_percent=0,
+    def __init__(self, set_bonus, main_atk_percent=0,
             main_hp_percent=False, main_def_percent=False, main_em=False, main_anemo_dmg_bonus=False,
             main_hydro_dmg_bonus=False, main_electro_dmg_bonus=False, main_dendro_dmg_bonus=False,
             main_cryo_dmg_bonus=False, main_pyro_dmg_bonus=False, main_geo_dmg_bonus=False,
@@ -30,3 +31,28 @@ class Goblet(Artifact):
             self.main_cryo_dmg_bonus > 0 or self.main_pyro_dmg_bonus > 0 or
             self.main_geo_dmg_bonus > 0 or self.main_phys_dmg_bonus > 0
         )
+
+    def equip(self, holder:Character):
+        self.set_holder(holder)
+        assert self.holder.goblet is None
+        self.holder.goblet = self
+        self.holder.anemo_dmg_bonus += self.main_anemo_dmg_bonus
+        self.holder.hydro_dmg_bonus += self.main_hydro_dmg_bonus
+        self.holder.electro_dmg_bonus += self.main_electro_dmg_bonus
+        self.holder.dendro_dmg_bonus += self.main_dendro_dmg_bonus
+        self.holder.cryo_dmg_bonus += self.main_cryo_dmg_bonus
+        self.holder.pyro_dmg_bonus += self.main_pyro_dmg_bonus
+        self.holder.geo_dmg_bonus += self.main_geo_dmg_bonus
+        self.holder.phys_dmg_bonus += self.main_phys_dmg_bonus
+        self.holder.flat_hp += self.sub_flat_hp
+        self.holder.flat_atk += self.sub_flat_atk
+        self.holder.flat_def += self.sub_flat_def
+        self.holder.hp_percent += self.sub_hp_percent if self.main_hp_percent == 0.0 else self.main_hp_percent
+        self.holder.atk_percent += self.sub_atk_percent if self.main_atk_percent == 0.0 else self.main_atk_percent
+        self.holder.def_percent += self.sub_def_percent if self.main_def_percent == 0.0 else self.main_def_percent
+        self.holder.er += self.sub_er
+        self.holder.em += self.sub_em if self.main_em == 0.0 else self.main_em
+        self.holder.all_cd += self.sub_cd
+        self.holder.all_cr += self.sub_cr
+        self.holder.set_bonus_counter[self.set_bonus] = self.holder.set_bonus_counter.get(self.set_bonus, 0) + 1
+        self.holder.check_set_bonus()
