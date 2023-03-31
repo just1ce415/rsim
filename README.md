@@ -26,9 +26,9 @@
 
 ### What rsim CANNOT do
 
-- Account for human factor (to account for that in some way, please, use realistic rotations).
+- Account for human factor (except all the actions (e.g. jump, dash, elemental skill, N2) have 10 frames added to account for human error, to further account for that in some way, please, use realistic rotations).
 
-- Account for ping.
+- Account for ping (it's always 20ms, never changes)
 
 - Account for any king of spatial data.
 
@@ -46,12 +46,14 @@
 
 - Code allows user to use bursts without enough energy for ER optimization and because rotation cannot be changed in the code by design (to account for that, please, write realistic rotations).
 
-- Simulator actually runs two simulations: test one (where data about damage distribution and energy requirements is collected) and main one.
+- Simulator actually runs two simulations: a test one (where data about damage distribution and energy requirements is collected) and a main one.
 
-- Character animations are coded in such way that it's assumed they are cancelled every time, when it's possible and optimal. In order chain of actions make feel to be less mechanic, character waits some time after performing action during after-animation.
+- Character animations are coded in such way that it's assumed they are cancelled every time, when it's possible and optimal.
 
 - Enemies are just dummies who does NOT attack and stay in one place.
 
 - For multitarget case, it's assumed, that enemies are close enough in order for quadratic scaling to work completely. However, application of some character's skills may benefit from enemies being not too close from each other (e.g. Yaoyao), therefore such skills can be configured to apply element in single target.
 
 - Burning swirl and frozen swirl are considered pyro swirl and cryo swirl respectively.
+
+- When character tries to use charged attack with not enough stamina, he just waits till it regenerates; by analogy, when character tries to use skill/burst while on cooldown, he just waits till it passes.
