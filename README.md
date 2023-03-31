@@ -56,4 +56,4 @@
 
 - Burning swirl and frozen swirl are considered pyro swirl and cryo swirl respectively.
 
-- When character tries to use charged attack with not enough stamina, he just waits till it regenerates; by analogy, when character tries to use skill/burst while on cooldown, he just waits till it passes.
+- When character tries to use charged attack/dash with not enough stamina, he just waits till it regenerates; by analogy, when character tries to use skill/burst while on cooldown, he just waits till it passes.
