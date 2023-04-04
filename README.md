@@ -30,7 +30,9 @@
 
 - Account for ping (it's always 20ms, never changes)
 
-- Account for any king of spatial data.
+- Account for any kind of spatial data.
+
+- Account for poise.
 
 - Account for poorly configured rotation.
 
