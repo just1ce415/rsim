@@ -21,7 +21,7 @@ class DefaultICD(Entity):
                 self.icds[key][0] = 0
                 self.icds[key][1] = 0
 
-    def apply_element(self, enemy):
+    def try_apply_element(self, enemy):
         """
         This function is invoked every time elemental attack hits a specific
         opponent and tries to apply an element. Returns True or False on

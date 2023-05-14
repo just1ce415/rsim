@@ -11,11 +11,21 @@ class DendroCore(Summon):
         self.special_multiplier = 2
         self.elemental_type = DENDRO
 
+        self.hyperbloom_timer = 0
+
     def time_passes(self, seconds: float):
-        self.timer -= seconds
-        if self.timer <= 0:
-            self.dmg_stats_ready = True
-            self.timeout()
+        if self.timedout:
+            return
+        if self.hyperbloom_timer == 0:
+            self.timer -= seconds
+            if self.timer <= 0:
+                self.dmg_stats_ready = True
+                self.timeout()
+        else:
+            self.hyperbloom_timer -= seconds
+            if self.hyperbloom_timer <= 0:
+                self.dmg_stats_ready = True
+                self.timeout()
 
     def apply_element(self, element: str, gu: float):
         if element == PYRO:
@@ -26,8 +36,7 @@ class DendroCore(Summon):
         elif element == ELECTRO:
             self.targets = [0]
             self.special_multiplier = 3
-            self.dmg_stats_ready = True
-            self.timeout()
+            self.hyperbloom_timer = 1
         else:
             return
 

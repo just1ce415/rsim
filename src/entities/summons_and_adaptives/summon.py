@@ -1,10 +1,13 @@
 from src.entities.characters.character import Character, Entity
-from src.constants import NONE
+from src.entities.other.particle_set import ParticleSet
+from src.entities.other.elemental_application_icd import *
+from src.constants import *
 
 class Summon(Entity):
     def __init__(self, summoner:Character):
         super().__init__()
         self.summoner = summoner
+        self.timedout = False
         # Tuple [chance to generate, respective amount]
         self.particle_generation = None
         self._init_particle_generation()
@@ -22,18 +25,6 @@ class Summon(Entity):
         self.def_percent = self.summoner.def_percent
         self.em = self.summoner.em
         self.er = self.summoner.er
-        self.swirl_reaction_bonus = self.summoner.swirl_reaction_bonus
-        self.bloom_reaction_bonus = self.summoner.bloom_reaction_bonus
-        self.burgeon_reaction_bonus = self.summoner.burgeon_reaction_bonus
-        self.hyperbloom_reaction_bonus = self.summoner.hyperbloom_reaction_bonus
-        self.aggravate_reaction_bonus = self.summoner.aggravate_reaction_bonus
-        self.spread_reaction_bonus = self.summoner.spread_reaction_bonus
-        self.overload_reaction_bonus = self.summoner.overload_reaction_bonus
-        self.superconduct_reaction_bonus = self.summoner.superconduct_reaction_bonus
-        self.electro_charged_reaction_bonus = self.summoner.electro_charged_reaction_bonus
-        self.burning_reaction_bonus = self.summoner.burning_reaction_bonus
-        self.vaporize_reaction_bonus = self.summoner.vaporize_reaction_bonus
-        self.melt_reaction_bonus = self.summoner.melt_reaction_bonus
         self.anemo_dmg_bonus = self.summoner.anemo_dmg_bonus
         self.hydro_dmg_bonus = self.summoner.hydro_dmg_bonus
         self.electro_dmg_bonus = self.summoner.electro_dmg_bonus
@@ -42,40 +33,9 @@ class Summon(Entity):
         self.pyro_dmg_bonus = self.summoner.pyro_dmg_bonus
         self.geo_dmg_bonus = self.summoner.geo_dmg_bonus
         self.phys_dmg_bonus = self.summoner.phys_dmg_bonus
-        self.na_dmg_bonus = self.summoner.na_dmg_bonus
-        self.ca_dmg_bonus = self.summoner.ca_dmg_bonus
-        self.pa_dmg_bonus = self.summoner.pa_dmg_bonus
-        self.skill_dmg_bonus = self.summoner.skill_dmg_bonus
-        self.burst_dmg_bonus = self.summoner.burst_dmg_bonus
-        self.all_dmg_bonus = self.summoner.all_dmg_bonus
-        self.all_cd = self.summoner.all_cd
-        self.all_cr = self.summoner.all_cr
-        self.anemo_cd = self.summoner.anemo_cd
-        self.hydro_cd = self.summoner.hydro_cd
-        self.electro_cd = self.summoner.electro_cd
-        self.dendro_cd = self.summoner.dendro_cd
-        self.cryo_cd = self.summoner.cryo_cd
-        self.pyro_cd = self.summoner.pyro_cd
-        self.geo_cd = self.summoner.geo_cd
-        self.phys_cd = self.summoner.phys_cd
-        self.na_cd = self.summoner.na_cd
-        self.ca_cd = self.summoner.ca_cd
-        self.pa_cd = self.summoner.pa_cd
-        self.skill_cd = self.summoner.skill_cd
-        self.burst_cd = self.summoner.burst_cd
-        self.anemo_cr = self.summoner.anemo_cr
-        self.hydro_cr = self.summoner.hydro_cr
-        self.electro_cr = self.summoner.electro_cr
-        self.dendro_cr = self.summoner.dendro_cr
-        self.cryo_cr = self.summoner.cryo_cr
-        self.pyro_cr = self.summoner.pyro_cr
-        self.geo_cr = self.summoner.geo_cr
-        self.phys_cr = self.summoner.phys_cr
-        self.na_cr = self.summoner.na_cr
-        self.ca_cr = self.summoner.ca_cr
-        self.pa_cr = self.summoner.pa_cr
-        self.skill_cr = self.summoner.skill_cr
-        self.burst_cr = self.summoner.burst_cr
+        self.crit_ratio = self.summoner.crit_ratio
+        self.cd = self.summoner.cd
+        self.cr = self.summoner.cr
         self.healing_bonus = self.summoner.healing_bonus
 
         """
@@ -86,6 +46,7 @@ class Summon(Entity):
         3) Generate particles
         4) Heal/shield
         5) Reduce character's HP
+        6) Create other summons
         """
         self.dmg_stats_ready = False
         self.mv_hp = 0
@@ -94,16 +55,20 @@ class Summon(Entity):
         self.mv_em = 0
         self.flat_dmg = 0
         self.dmg_bonus = 0
-        self.crit_ratio = 0
-        self.cd = 0
-        self.cr = 0
         self.reaction_multiplier = 0
         self.reaction_bonus = 0
-        self.quadratic_factor = 0
+        self.quadratic_factor = 1
+        self.attack_type = NONE
         self.dmg_type = NONE
         self.targets = [0]
 
-        self.particle_set = None
+        self.icd_group: DefaultICD = None
+        self.gu = 0.0
+        self.apply_to_enemy = True
+        self.apply_to_character = False
+        self.apply_to_weapon = False
+
+        self.particle_set: ParticleSet = None
 
         self.heal_stats_ready = False
         self.heal_base_stat = 0
@@ -115,6 +80,9 @@ class Summon(Entity):
         self.shield_mv = 0
 
         self.hp_reduced = 0
+
+        self.summon:Entity = None
+        self.summon_limit = 1
 
     def _init_particle_generation(self):
         """

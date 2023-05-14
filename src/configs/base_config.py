@@ -6,12 +6,12 @@ class BaseConfig:
 
         # to optimize artifacts
         self.target_ers = None
-        self.mv_params = None
+        self.dmg_info = None
 
-    def _initialize_rotation(self):
+    def initialize_rotation(self):
         pass
 
-    def _initialize_characters(self):
+    def initialize_team(self):
         pass
 
     def initialize_artifacts(self):

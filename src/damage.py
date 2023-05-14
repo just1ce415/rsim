@@ -69,6 +69,9 @@ def general_dmg(
     t_atk = total_atk(base_atk, atk_percent, flat_atk)
     t_hp = total_hp(base_hp, hp_percent, flat_hp)
     t_def = total_def(base_def, def_percent, flat_def)
+    additive_reaction = 0
+    multiplicative_reaction = 1
+    transformative_reaction = 0
     if reaction_multiplier in (1.15, 1.25):
         additive_reaction = additive_reaction_dmg(reaction_multiplier, level, em, reaction_bonus)
     elif level == 0:
@@ -81,9 +84,15 @@ def general_dmg(
         (1 + dmg_bonus) * cm * multiplicative_reaction + transformative_reaction)
 
 def talent_dmg(effective_talent, mv):
+    """
+    Damage from some talent, NOT outgoing
+    """
     return effective_talent * mv
 
-def outgoing_dmg_multiplicative(dmg, character_level, enemy_level, enemy_resistance, def_shred, def_ignore):
+def outgoing_dmg_multiplicative(dmg, character_level, enemy_level, enemy_resistance=0.1, def_shred=0, def_ignore=0):
+    """
+    Outgoing damage which is not dealt by transformative reaction.
+    """
     return dmg * res_multiplier(enemy_resistance) * def_multiplier(character_level, enemy_level, def_shred, def_ignore)
 
 def res_multiplier(enemy_resistance):
@@ -107,6 +116,10 @@ def get_cm(cv, crit_ratio=1/2):
     else:
         return 1 + 1 * (cv - 2)
 
+def get_cr(cd, cr, crit_ratio=1/2):
+    cv = 2*cr + cd
+    return cv * crit_ratio / (2*crit_ratio + 1)
+
 def transformative_reaction_dmg(reaction, level, em, reaction_bonus):
     if isinstance(reaction_bonus, str):
         if reaction == SWIRL:
@@ -129,6 +142,9 @@ def transformative_reaction_dmg(reaction, level, em, reaction_bonus):
     return special_multiplier * level_multiplier(level) * (1 + emm + reaction_bonus)
 
 def outgoing_transformative(reaction_dmg, enemy_resistance):
+    """
+    Outgoing damage dealt by transformative reaction.
+    """
     return reaction_dmg * res_multiplier(enemy_resistance)
 
 def additive_reaction_dmg(reaction, level, em, reaction_bonus):
@@ -153,12 +169,21 @@ def multipicative_reaction_factor(reaction, em, reaction_bonus):
     emm = 2.78 * em / (1400 + em)
     return special_multiplier * (1 + emm + reaction_bonus)
 
-def shield_hp(stat, mv, shield_strength):
-    return stat * mv * shield_strength
+def shield_hp(stat, mv, shield_strength=1, damage_absorbtion=1):
+    """
+    Shield HP from some talent
+    """
+    return stat * mv * shield_strength * damage_absorbtion
 
 def crystallize_shield_hp(level, em, shield_strength):
+    """
+    Shield HP from cristallize
+    """
     emm = 4.44*em / (em + 1400)
     return base_shield_hp(level) * emm * shield_strength
 
 def healing(stat, mv, healing_bonus, healing_received):
+    """
+    Amount of healing from some talent
+    """
     return stat * mv * healing_bonus * healing_received

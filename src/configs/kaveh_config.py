@@ -9,10 +9,8 @@ from src.entities.artifacts.artifact_generator import ArtifactGenerator
 class KavehConfig(BaseConfig):
     def __init__(self):
         super().__init__(self)
-        self._initialize_characters()
-        self._initialize_rotation()
 
-    def _initialize_characters(self):
+    def initialize_characters(self):
         # 1st character in the team
         kaveh = Kaveh(constallation=0) # for now always lvl 90, talent lvls 9-9-9
         kaveh.equip_weapon(Aquamarine(refinement=5)) # for now always 90 lvl
@@ -32,7 +30,7 @@ class KavehConfig(BaseConfig):
         self.team = [kaveh, fischl, xingqiu, yaemiko]
 
 
-    def _initialize_rotation(self):
+    def initialize_rotation(self):
         kaveh, fischl, xingqiu, yaemiko = self.team
         # Rotation
         self.rotation = [

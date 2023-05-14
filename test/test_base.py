@@ -13,6 +13,10 @@ else:
 
 from src.entities.other.gauge_status import GaugeStatus
 from src.entities.summons_and_adaptives.reaction_summons import DendroCore, ElectroCharged, Burning
+from src.entities.summons_and_adaptives.adaptive import ElectroResonance, CryoResonance, GeoResonance, DendroResonance
+from src.entities.other.particle_set import ParticleSet
+from src.entities.enemies.enemy import Enemy
+from src.event import Event
 from src.entities.characters.character import Character
 from src.constants import *
 
@@ -689,6 +693,116 @@ class TestGaugeStatus:
         is_close(g.current_auras[PYRO][0], 0.3)
         is_close(g.current_auras[BURNING][0], 0.5)
 
+class TestResonances:
+    c1 = Character()
+    c2 = Character()
+    c3 = Character()
+    c4 = Character()
+    c1.em = 100
+    c2.all_cr += 0.3
+    c3.em = 40
+    team = [c1, c2, c3, c4]
+    enemy = [Enemy()]
+    c1.set_team(team)
+    c1.set_enemies(enemy)
+    c2.set_team(team)
+    c2.set_enemies(enemy)
+    c3.set_team(team)
+    c3.set_enemies(enemy)
+    c4.set_team(team)
+    c4.set_enemies(enemy)
+
+    def test_electro_resonance(self):
+        electro_resonance = ElectroResonance(self.c1)
+        assert electro_resonance.particle_set == None
+        electro_resonance.time_passes(5)
+        assert electro_resonance.particle_set == None
+        electro_resonance.notify(Event(event_type=REACTION, reaction=ELECTRO_CHARGED))
+        assert electro_resonance.particle_set != None
+        electro_resonance.time_passes(0.1)
+        assert electro_resonance.particle_set != None
+        assert electro_resonance.particle_set.element == ELECTRO
+        assert electro_resonance.particle_set.n_particles == 1
+        particle_set = electro_resonance.particle_set
+        assert isinstance(particle_set, ParticleSet)
+        electro_resonance.time_passes(1.21)
+        particle_set.time_passes(1.21)
+        assert electro_resonance.particle_set == None
+        assert particle_set.timedout
+        electro_resonance.notify(Event(event_type=REACTION, reaction=AGGRAVATE))
+        assert electro_resonance.particle_set == None
+        electro_resonance.time_passes(4)
+        electro_resonance.notify(Event(event_type=REACTION, reaction=QUICKEN))
+        assert electro_resonance.particle_set != None
+
+    def test_cryo_resonance(self):
+        cryo_resonance = CryoResonance(self.c1)
+        self.enemy[0].gauge_status.current_auras[CRYO] = [1, 0]
+        cryo_resonance.notify(Event(event_type=CHARACTER_ATTACKS, character_one=self.c1, enemy=self.enemy[0]))
+        assert self.c1.all_cr == 0.2
+        cryo_resonance.notify(Event(event_type=CHARACTER_HITS, character_one=self.c1, enemy=self.enemy[0]))
+        is_close(self.c1.all_cr, 0.05)
+        self.enemy[0].gauge_status.current_auras[CRYO] = [0, 0]
+        self.enemy[0].gauge_status.current_auras[FROZEN] = [1, 0]
+        cryo_resonance.notify(Event(event_type=CHARACTER_ATTACKS, character_one=self.c2, enemy=self.enemy[0]))
+        is_close(self.c2.all_cr, 0.5)
+        cryo_resonance.notify(Event(event_type=CHARACTER_HITS, character_one=self.c2, enemy=self.enemy[0]))
+        is_close(self.c2.all_cr, 0.35)
+
+    def test_geo_resonance(self):
+        geo_resonance = GeoResonance(self.c1)
+        assert self.c1.all_dmg_bonus == 0
+        assert self.c2.all_dmg_bonus == 0
+        assert self.c3.all_dmg_bonus == 0
+        assert self.c4.all_dmg_bonus == 0
+        self.c1.on_field = True
+        self.c1.is_shielded = True
+        self.c2.is_shielded = True
+        geo_resonance.time_passes(0.01)
+        assert self.c1.all_dmg_bonus == 0.15
+        assert self.c2.all_dmg_bonus == 0
+        self.c1.on_field = False
+        self.c2.on_field = True
+        geo_resonance.time_passes(0.01)
+        assert self.c1.all_dmg_bonus == 0
+        assert self.c2.all_dmg_bonus == 0.15
+        assert self.c3.all_dmg_bonus == 0
+        geo_resonance.notify(Event(event_type=CHARACTER_HITS, character_one=self.c2, enemy=self.enemy[0]))
+        assert self.enemy[0].resistance[GEO] == -.1
+        geo_resonance.notify(Event(event_type=CHARACTER_HITS, character_one=self.c1, enemy=self.enemy[0]))
+        assert self.enemy[0].resistance[GEO] == -.1
+        geo_resonance.time_passes(10)
+        assert self.enemy[0].resistance[GEO] == -.1
+        assert self.c1.all_dmg_bonus == 0
+        assert self.c2.all_dmg_bonus == 0.15
+        assert geo_resonance.res_shred_dict[self.enemy[0]][0]
+        assert geo_resonance.res_shred_dict[self.enemy[0]][1] == 5
+        geo_resonance.notify(Event(event_type=CHARACTER_HITS, character_one=self.c1, enemy=self.enemy[0]))
+        assert self.enemy[0].resistance[GEO] == -.1
+        assert geo_resonance.res_shred_dict[self.enemy[0]][1] == 15
+        geo_resonance.time_passes(16)
+        assert self.enemy[0].resistance[GEO] == .1
+        assert not geo_resonance.res_shred_dict[self.enemy[0]][0]
+        assert geo_resonance.res_shred_dict[self.enemy[0]][1] == 0
+
+    def test_dendro_resonance(self):
+        dendro_resonance = DendroResonance(self.c1)
+        dendro_resonance.notify(Event(event_type=REACTION, reaction=QUICKEN))
+        dendro_resonance.time_passes(2)
+        assert dendro_resonance.bqb_em_timer == 4
+        assert self.c1.em == 130
+        assert self.c2.em == 30
+        dendro_resonance.notify(Event(event_type=REACTION, reaction=BLOOM))
+        assert dendro_resonance.bqb_em_timer == 6
+        assert self.c1.em == 130
+        assert self.c2.em == 30
+        dendro_resonance.notify(Event(event_type=REACTION, reaction=HYPERBLOOM))
+        dendro_resonance.time_passes(1)
+        assert dendro_resonance.ashb_em_timber == 5
+        assert dendro_resonance.bqb_em_timer == 5
+        assert self.c1.em == 150
+        assert self.c2.em == 50
+
 if __name__ == "__main__":
-    t = TestGaugeStatus()
-    t.test_quicken_dendro()
+    t = TestResonances()
+    t.test_geo_resonance()

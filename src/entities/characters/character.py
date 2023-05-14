@@ -1,5 +1,8 @@
 from src.entities.entity import Entity
+from src.entities.enemies.enemy import Enemy
 from src.constants import *
+
+from typing import List
 
 class Character(Entity):
     def __init__(
@@ -13,6 +16,13 @@ class Character(Entity):
         self.elemental_type = NONE
         self.stamina = 240
         self._set_general_info()
+
+        # Stamina info
+        self.stamina_icd = 0
+        # (ICD, is_able_to_dash)
+        self.dash_icd = [0, True]
+        self.dash_stamina_decrease = 0
+        self.ca_stamina_decrease = 0
 
         # Equipment info
         self.level = level
@@ -43,20 +53,6 @@ class Character(Entity):
         self.er = 1
         self._activate_base_stats()
 
-        self.swirl_reaction_bonus = 0
-        self.bloom_reaction_bonus = 0
-        self.burgeon_reaction_bonus = 0
-        self.hyperbloom_reaction_bonus = 0
-        self.aggravate_reaction_bonus = 0
-        self.spread_reaction_bonus = 0
-        self.overload_reaction_bonus = 0
-        self.superconduct_reaction_bonus = 0
-        self.electro_charged_reaction_bonus = 0
-        self.burning_reaction_bonus = 0
-        self.vaporize_reaction_bonus = 0
-        self.melt_reaction_bonus = 0
-        # Potentially add shatter
-
         self.anemo_dmg_bonus = 0
         self.hydro_dmg_bonus = 0
         self.electro_dmg_bonus = 0
@@ -65,50 +61,19 @@ class Character(Entity):
         self.pyro_dmg_bonus = 0
         self.geo_dmg_bonus = 0
         self.phys_dmg_bonus = 0
-        self.na_dmg_bonus = 0
-        self.ca_dmg_bonus = 0
-        self.pa_dmg_bonus = 0
-        self.skill_dmg_bonus = 0
-        self.burst_dmg_bonus = 0
-        self.all_dmg_bonus = 0
 
         self.crit_ratio = crit_ratio
-        self.all_cd = 0.5
-        self.all_cr = 0.05
-        self.anemo_cd = 0
-        self.hydro_cd = 0
-        self.electro_cd = 0
-        self.dendro_cd = 0
-        self.cryo_cd = 0
-        self.pyro_cd = 0
-        self.geo_cd = 0
-        self.phys_cd = 0
-        self.na_cd = 0
-        self.ca_cd = 0
-        self.pa_cd = 0
-        self.skill_cd = 0
-        self.burst_cd = 0
-        self.anemo_cr = 0
-        self.hydro_cr = 0
-        self.electro_cr = 0
-        self.dendro_cr = 0
-        self.cryo_cr = 0
-        self.pyro_cr = 0
-        self.geo_cr = 0
-        self.phys_cr = 0
-        self.na_cr = 0
-        self.ca_cr = 0
-        self.pa_cr = 0
-        self.skill_cr = 0
-        self.burst_cr = 0
+        self.cd = 0.5
+        self.cr = 0.05
 
         self.healing_bonus = 0
         self.healing_received = 0
         self.shield_strength = 0
+        self.cooldown_reduction = 0
 
         # Skills general info
-        self.skill_cd = 0
-        self.burst_cd = 0
+        self.skill_cooldown = 0
+        self.burst_cooldown = 0
         self.energy = 0
         self.burst_cost = 0
         self._init_attacks()
@@ -205,17 +170,24 @@ class Character(Entity):
         pass
 
     def time_passes(self, seconds:float):
-        self.skill_cd = max(0, self.skill_cd - seconds)
-        self.burst_cd = max(0, self.burst_cd - seconds)
+        self.skill_cooldown = max(0, self.skill_cooldown - seconds)
+        self.burst_cooldown = max(0, self.burst_cooldown - seconds)
+        self.stamina_icd = max(0, self.stamina_icd - seconds)
+        if self.stamina_icd == 0:
+            self.stamina = min(240, self.stamina + 25 * seconds)
+        self.dash_icd[0] = max(0, self.dash_icd - seconds)
+        if self.dash_icd[0] == 0:
+            self.dash_icd = [0, True]
 
     def hitlag_extension(self, seconds:float):
-        pass
+        self.stamina_icd = max(1.5, self.stamina_icd + seconds)
+        self.dash_icd[0] = max(0.8, self.dash_icd[0] + seconds)
 
     def notify(self, event):
         pass
 
     def set_team(self, team):
-        self.team = team
+        self.team: List[Character] = team
 
     def set_enemies(self, enemies):
-        self.enemies = enemies
+        self.enemies: List[Enemy] = enemies
